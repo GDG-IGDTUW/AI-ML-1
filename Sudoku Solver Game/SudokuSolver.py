@@ -85,6 +85,19 @@ def solve():
 def classify_puzzle():
     """Classify the puzzle as Easy, Medium, or Hard based on complexity."""
     # TODO: Implement puzzle classification based on number of blanks or complexity.
+    board = get_board()
+    blank_count = sum(row.count(0) for row in board)
+
+    if blank_count < 10:
+        difficulty = "Easy"
+    elif 10 <= blank_count <= 20:
+        difficulty = "Medium"
+    else:
+        difficulty = "Hard"
+
+    messagebox.showinfo("Puzzle Classification", f"The puzzle is classified as: {difficulty}")
+
+
 def clear_grid():
     """Clear the Sudoku grid."""
     # TODO: Add a button to clear the grid and restart.
