@@ -134,10 +134,75 @@ def search_transactions():
     # TODO: Allow users to search for transactions by category, type, or description.
     pass
 
-def undo_last_action():
-    # TODO: Implement an "Undo" feature to revert the most recent addition, update, or deletion of a transaction.
-    pass
+# TODO: Implement an "Undo" feature to revert the most recent addition, update, or deletion of a transaction.
+import csv
 
+DATA_FILE = 'transactions.csv'
+last_action = None
+last_transaction = None
+def save_last_transaction(action, transaction):
+    global last_action, last_transaction
+    last_action = action
+    last_transaction = transaction
+def undo_last_action():
+    global last_action, last_transaction
+
+    if not last_action:
+        print("No actions to undo.")
+        return
+
+    if last_action == 'add':
+        transactions = []
+        with open(DATA_FILE, mode='r') as file:
+            reader = csv.reader(file)
+            next(reader)
+            transactions = list(reader)
+        
+        transactions.pop()
+        
+        with open(DATA_FILE, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Type", "Category", "Amount", "Description"])
+            writer.writerows(transactions)
+        
+        print("Last added transaction has been removed.")
+
+    elif last_action == 'update':
+        transactions = []
+        with open(DATA_FILE, mode='r') as file:
+            reader = csv.reader(file)
+            next(reader)
+            transactions = list(reader)
+
+        transaction_id = last_transaction[0]
+        transactions[transaction_id] = last_transaction
+
+        with open(DATA_FILE, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Type", "Category", "Amount", "Description"])
+            writer.writerows(transactions)
+
+        print("Last updated transaction has been reverted to its previous state.")
+
+    elif last_action == 'delete':
+        transactions = []
+        with open(DATA_FILE, mode='r') as file:
+            reader = csv.reader(file)
+            next(reader)
+            transactions = list(reader)
+
+        transactions.append(last_transaction)
+        
+        with open(DATA_FILE, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Type", "Category", "Amount", "Description"])
+            writer.writerows(transactions)
+
+        print("Last deleted transaction has been restored.")
+
+    last_action = None
+    last_transaction = None
+pass
 def clear_screen():
     # TODO: Add functionality to clear the terminal screen at the start of each menu display.
     pass
