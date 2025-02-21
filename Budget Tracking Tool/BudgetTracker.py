@@ -5,22 +5,42 @@ import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+import shutil
+from datetime import datetime
+
 DATA_FILE = 'budget_data.csv'
+
+BACKUP_FILE = 'budget_data_backup.csv'
 
 def initialize_data_file():
     if not os.path.exists(DATA_FILE):
         with open(DATA_FILE, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Type', 'Category', 'Amount', 'Description'])  # TODO: Add a timestamp field to the CSV header.
+import os
+import platform
 
-def add_transaction(transaction_type, category, amount, description):
-    # TODO: Validate that the amount is a positive number.
-    if ((type(amount) != float and type(amount) != int) or amount < 0):  #checks if the datatype of amount is not int or float and then checks if entered amount is negative
+def clear_screen():
+    system = platform.system()
+    if system == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+from datetime import datetime
+
+def add_transaction(transaction_type, category, amount, description="No description"):
+    if not isinstance(amount, (int, float)) or amount < 0:
         print("Invalid amount")
-    # TODO: Automatically add the current date and time when a transaction is recorded.
+        return
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     with open(DATA_FILE, mode='a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow([transaction_type, category, amount, description])
+        writer.writerow([transaction_type, category, amount, description, timestamp])
+    
+    print("Transaction added successfully!")
 
 def update_transaction(index, transaction_type, category, amount, description):
     # TODO: Validate that the provided index is valid.
@@ -65,9 +85,18 @@ def read_transactions():
         reader = csv.reader(file)
         return list(reader)[1:]  
 
+import pandas as pd
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from datetime import datetime
 def generate_report():
     # TODO: Extend the report to show income and expense totals by category.
     # TODO: Add functionality to generate a summary of transactions within a specific date range.
+    start_date = input("Enter start date (YYYY-MM-DD): ")
+    end_date = input("Enter end date (YYYY-MM-DD): ")
+    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
     income_by_category = {}
     expenses_by_category = {}
     total_income = 0.0
@@ -77,14 +106,16 @@ def generate_report():
         reader = csv.reader(file)
         next(reader)  # Skip header
         for row in reader:
-            category = row[1]
-            amount = float(row[2])
-            if row[0] == 'income':
-                total_income += amount
-                income_by_category[category] = income_by_category.get(category, 0) + amount
-            elif row[0] == 'expense':
-                total_expenses += amount
-                expenses_by_category[category] = expenses_by_category.get(category, 0) + amount
+            transaction_date = datetime.strptime(row[4], '%Y-%m-%d %H:%M:%S')  # Assuming the date is in this format
+            if start_date <= transaction_date <= end_date:
+                category = row[1]
+                amount = float(row[2])
+                if row[0] == 'income':
+                    total_income += amount
+                    income_by_category[category] = income_by_category.get(category, 0) + amount
+                elif row[0] == 'expense':
+                    total_expenses += amount
+                    expenses_by_category[category] = expenses_by_category.get(category, 0) + amount
 
     savings = total_income - total_expenses
 
@@ -101,7 +132,6 @@ def generate_report():
     print(f"Total Expenses: ${total_expenses:.2f}")
     print(f"Savings: ${savings:.2f}")
 def export_to_excel_or_pdf():
-    # TODO: Provide an option to export the transaction data to a PDF or Excel file.
     df = pd.read_csv(DATA_FILE)
     print("1. Export to Excel")
     print("2. Export to PDF")
@@ -128,14 +158,51 @@ def export_to_excel_or_pdf():
         print("Data exported to budget_data.pdf")
     else:
         print("Invalid choice.")
-    pass
 
 def search_transactions():
-    # TODO: Allow users to search for transactions by category, type, or description.
-    pass
+    print("\nSearch by:")
+    print("1. Category")
+    print("2. Type (Income/Expense)")
+    print("3. Description")
+    
+    search_choice = input("Choose a search criterion (1, 2, or 3): ")
 
-def undo_last_action():
+    search_term = input("Enter search term: ").lower()
+
+    found_transactions = []
+
+    with open(DATA_FILE, mode='r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip header
+        for row in reader:
+            if search_choice == '1' and search_term in row[1].lower():  
+                found_transactions.append(row)
+            elif search_choice == '2' and search_term in row[0].lower(): 
+                found_transactions.append(row)
+            elif search_choice == '3' and search_term in row[3].lower(): 
+                found_transactions.append(row)
+
+    if found_transactions:
+        print("\nSearch Results:")
+        for transaction in found_transactions:
+            print(f"Type: {transaction[0]}, Category: {transaction[1]}, Amount: ${transaction[2]}, Description: {transaction[3]}")
+    else:
+        print("No transactions found matching your criteria.")
+pass
+
     # TODO: Implement an "Undo" feature to revert the most recent addition, update, or deletion of a transaction.
+def backup_data_file():
+    """Creates a backup of the data file before modification."""
+    if os.path.exists(DATA_FILE):
+        shutil.copy(DATA_FILE, BACKUP_FILE)
+    
+def undo_last_action():
+    """Restores the last saved state from the backup file."""
+    if os.path.exists(BACKUP_FILE):
+        shutil.copy(BACKUP_FILE, DATA_FILE)
+        print("Last action undone successfully.")
+    else:
+        print("No previous state available to undo.")
     pass
 
 def clear_screen():
@@ -146,6 +213,7 @@ def main():
     initialize_data_file()
     while True:
         # TODO: Call clear_screen() here for better readability.
+        clear_screen()
         print("\nBudget Tracker")
         print("1. Add Transaction")
         print("2. Update Transaction")
@@ -161,38 +229,38 @@ def main():
             transaction_type = input("Enter transaction type (income/expense): ")
             category = input("Enter category: ")
             amount = input("Enter amount: ")
-            description = input("Enter description (optional): ") or "No description"  # TODO: Handle optional descriptions.
+            description = input("Enter description (optional): ").strip() or "No description"  # Handle optional descriptions
             add_transaction(transaction_type, category, amount, description)
         elif choice == '2':
-            total=read_transactions()
-            if(len(total)==0):
-                print("no transactions made yet..please add transactions first")
+            total = read_transactions()
+            if len(total) == 0:
+                print("No transactions made yet. Please add transactions first.")
                 continue
             else:
-                 while True:
-                     index = int(input("Enter transaction index to update: "))   # TODO: Use a validated index.
-                     if(index>=0 and index<len(total)):
-                         break
-                     else:
-                         print("Invalid index..please enter valid index")
+                while True:
+                    index = int(input("Enter transaction index to update: "))  # TODO: Use a validated index.
+                    if index >= 0 and index < len(total):
+                        break
+                    else:
+                        print("Invalid index. Please enter a valid index.")
 
             transaction_type = input("Enter transaction type (income/expense): ")
             category = input("Enter category: ")
             amount = input("Enter amount: ")
-            description = input("Enter description (optional): ") 
+            description = input("Enter description (optional): ").strip() or "No description"  # Handle optional descriptions
             update_transaction(index, transaction_type, category, amount, description)
         elif choice == '3':
-            total=read_transactions()
-            if(len(total)==0):
-                print("no transactions to delete..please first add transactions")
+            total = read_transactions()
+            if len(total) == 0:
+                print("No transactions to delete. Please first add transactions.")
                 continue
             else:
                 while True:
-                    index = int(input("Enter transaction index to delete: "))    # TODO: Use a validated index.
-                    if index>=0 and index<len(total):
+                    index = int(input("Enter transaction index to delete: "))  # TODO: Use a validated index.
+                    if index >= 0 and index < len(total):
                         break
                     else:
-                        print("invalid index...please enter again")
+                        print("Invalid index. Please enter again.")
                 delete_transaction(index)
         elif choice == '4':
             generate_report()
@@ -206,6 +274,3 @@ def main():
             break
         else:
             print("Invalid choice. Please try again.")
-
-if __name__ == "__main__":
-    main()
