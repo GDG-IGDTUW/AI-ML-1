@@ -1,0 +1,4 @@
+streamlit
+Pillow
+nltk
+scikit-learn

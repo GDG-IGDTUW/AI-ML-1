@@ -1,0 +1,16 @@
+# Virtual Environment
+venv/
+__pycache__/
+
+# Model/Data (if too large or frequently changing)
+# The .pkl file is essential for deployment, but good practice to list it
+# just in case you ever want to exclude it. Keep it tracked for this deployment!
+# emotion_model.pkl
+
+# Python-specific
+*.pyc
+*.DS_Store
+
+# Logs and build artifacts
+logs/
+dist/
