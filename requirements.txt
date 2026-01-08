@@ -1,4 +1,0 @@
-streamlit
-scikit-learn
-nltk
-PyPDF2
