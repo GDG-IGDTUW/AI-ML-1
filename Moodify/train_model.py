@@ -1,11 +1,7 @@
 # train_model.py
 import os
-import re
 import pandas as pd
 import numpy as np
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
@@ -14,10 +10,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 import joblib
 
-# ---------------------------
-# 0) NLTK setup
-# ---------------------------
-nltk.download('stopwords', quiet=True)
+from preprocessing import preprocess_text, basic_preprocess
 
 # ---------------------------
 # 1) Paths - update if needed
@@ -52,31 +45,25 @@ def detect_columns(df):
 TEXT_COL, LABEL_COL = detect_columns(train_df)
 print("Using TEXT column:", TEXT_COL, "| LABEL column:", LABEL_COL)
 
-# ---------------------------
-# 3) Preprocessing
-# ---------------------------
-stop_words = set(stopwords.words("english"))
-if "not" in stop_words:
-    stop_words.remove("not")
-ps = PorterStemmer()
+print("Preprocessing training data...")
+train_df['text_clean'] = train_df[TEXT_COL].apply(preprocess_text)
 
-def preprocess_text(s):
-    if pd.isna(s): return ""
-    s = str(s).lower()
-    s = re.sub(r'\[.*?\]', ' ', s)
-    s = re.sub(r'https?://\S+|www\.\S+', ' ', s)
-    s = re.sub(r"[^a-z\s']", ' ', s)
-    words = s.split()
-    words = [ps.stem(w) for w in words if w not in stop_words and len(w) > 1]
-    return " ".join(words)
+print("Preprocessing validation data (no spell correction)...")
+val_df['text_clean'] = val_df[TEXT_COL].apply(basic_preprocess)
 
-for df in (train_df, val_df, test_df):
-    df['text_clean'] = df[TEXT_COL].apply(preprocess_text)
-    df.dropna(subset=['text_clean'], inplace=True)
+print("Preprocessing test data (no spell correction)...")
+test_df['text_clean'] = test_df[TEXT_COL].apply(basic_preprocess)
+
+
+def clean_df(df):
+    df = df.dropna(subset=['text_clean'])
     df = df[df['text_clean'].str.strip() != ""]
-train_df = train_df[train_df['text_clean'].str.strip() != ""].reset_index(drop=True)
-val_df   = val_df[val_df['text_clean'].str.strip() != ""].reset_index(drop=True)
-test_df  = test_df[test_df['text_clean'].str.strip() != ""].reset_index(drop=True)
+    return df.reset_index(drop=True)
+
+train_df = clean_df(train_df)
+val_df   = clean_df(val_df)
+test_df  = clean_df(test_df)
+
 print(f"After cleaning -> train: {len(train_df)}, val: {len(val_df)}, test: {len(test_df)}")
 
 # ---------------------------
