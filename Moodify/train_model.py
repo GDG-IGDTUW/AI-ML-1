@@ -129,14 +129,24 @@ print(f"\nSaved TF-IDF + LogisticRegression + LabelEncoder to: {OUT}")
 # ---------------------------
 # 9) Optional helper for quick testing
 # ---------------------------
-def predict_lyrics(lyrics):
+def predict_emotion(lyrics):
     txt = preprocess_text(lyrics)
     vec = tfidf.transform([txt])
-    pred_id = clf.predict(vec)[0]
-    return le.inverse_transform([pred_id])[0]
+    probs = clf.predict_proba(vec)[0]
+
+    emotion_labels = le.inverse_transform(clf.classes_)
+    emotion_probs = dict(zip(emotion_labels, probs))
+
+    top_3 = sorted(
+        emotion_probs.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:3]
+
+    return top_3
 
 # Example
 print("\nExample predictions:")
-print("Happy:", predict_lyrics("I am dancing and feeling so happy, life is beautiful"))
-print("Sad:", predict_lyrics("Tears fall every night, my heart hurts and I'm alone"))
-print("Angry:", predict_lyrics("I will not forgive you, you made me furious"))
+print("Happy:", predict_emotion("I am dancing and feeling so happy, life is beautiful"))
+print("Sad:", predict_emotion("Tears fall every night, my heart hurts and I'm alone"))
+print("Angry:", predict_emotion("I will not forgive you, you made me furious"))
