@@ -35,37 +35,69 @@ WELLBEING_EXERCISES = {
         "Share your joy with someone (call/message) - 30s",
         "Write 3 quick things you're grateful for - 2 to 3 min",
         "Savor: close your eyes and notice details for 60s",
-        "Do one tiny celebratory action (song, stretch, treat)"
+        "Do one tiny celebratory action (song, stretch, treat)",
+        # New additions
+        "Create a 30-second 'joy snapshot': write what happened, where you were, and how you felt.",
+        "Turn your happiness into motion — dance freely to one song.",
+        "Plan one small future treat that you can look forward to this week."
     ],
     "Sadness": [
         "Take a grounding walk for 6 to 10 minutes and notice senses",
         "Free-write for 10 minutes - no edits, just feelings",
         "Send a short note to a trusted person",
-        "Try a soothing routine: warm drink + calming music for 10 to 15 min"
+        "Try a soothing routine: warm drink + calming music for 10 to 15 min",
+        # New additions
+        "Create a 30-second 'joy snapshot': write what happened, where you were, and how you felt.",
+        "Turn your happiness into motion — dance freely to one song.",
+        "Plan one small future treat that you can look forward to this week."
+
     ],
     "Anger": [
         "Box breathing: 4s inhale, 4s hold, 4s exhale, 4s hold - 5 rounds",
         "Move vigorously for 3 minutes (marching, stairs)",
         "Write it out, then safely discard or delete",
-        "Step away from the trigger for 10 minutes and breathe"
+        "Step away from the trigger for 10 minutes and breathe",
+        # New additions
+        "Write an uncensored rant for 2 minutes — do not reread it.",
+        "Channel the energy into a fast cleaning or organizing burst (5 minutes).",
+        "Ask yourself: what boundary was crossed and how can I protect it next time?"
+
+
     ],
     "Fear": [
         "5-4-3-2-1 grounding: identify senses in order",
         "Write one concrete 5-minute step you can do next",
         "Soothing breaths: inhale 4s, exhale 6s for 6 rounds",
-        "Separate facts from worries - list what you know vs fear"
+        "Separate facts from worries - list what you know vs fear",
+        # New additions
+        "Recall a past moment when you handled something difficult successfully.",
+        "Press your feet firmly into the floor and notice stability for 60 seconds.",
+        "Convert the fear into a question you can research or clarify."
+
+
     ],
     "Love": [
         "Send a short appreciative message to someone you care about",
         "Write 3 specific reasons you value this relationship",
         "Schedule a short call or shared micro-activity",
-        "Express creatively: quick sketch, voice note or short poem"
+        "Express creatively: quick sketch, voice note or short poem",
+        # New additions
+        "Create a short appreciation list for someone without sending it — just reflect.",
+        "Revisit a meaningful memory with someone you love and relive the details.",
+        "Offer help or support to someone today without being asked."
+
+
     ],
     "Surprise": [
         "Pause and breathe for 30s, notice body sensations",
         "Journal 2 to 3 lines: pleasant or unsettling? why?",
         "If action needed, choose one tiny next move (2 min)",
-        "If positive, share it; if unsettling, keep details to review later"
+        "If positive, share it; if unsettling, keep details to review later",
+        # New additions
+        "Ask: what did this moment teach me that I didn’t expect?",
+        "Notice how your assumptions were challenged by this event.",
+        "Describe the surprise using only three words."
+
     ],
 }
 
