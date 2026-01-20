@@ -1,31 +1,8 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
+import pandas as pd 
 import joblib
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
 from sklearn.metrics.pairwise import cosine_similarity
-
-# NLTK setup 
-nltk.download('stopwords', quiet=True)
-
-# Preprocessing
-stop_words = set(stopwords.words("english"))
-if "not" in stop_words:
-    stop_words.remove("not")
-ps = PorterStemmer()
-
-def preprocess_text(s):
-    if pd.isna(s): return ""
-    s = str(s).lower()
-    s = re.sub(r'\[.*?\]', ' ', s)
-    s = re.sub(r'https?://\S+|www\.\S+', ' ', s)
-    s = re.sub(r"[^a-z\s']", ' ', s)
-    words = s.split()
-    words = [ps.stem(w) for w in words if w not in stop_words and len(w) > 1]
-    return " ".join(words)
+from preprocessing import preprocess_text
 
 # Load model components 
 @st.cache_resource(show_spinner=False)
@@ -205,7 +182,7 @@ with col_center:
    
     st.markdown(
         """
-        <div style="text-align: center; margin-top: -1.75rem; margin-bottom: 0.5rem; white-space: nowrap;">
+        <div style="text-align: center; margin-top: -1.75rem; margin-bottom: 0.5rem; margin-left: -2rem; white-space: nowrap;">
             <h1>MOODIFY</h1>
             <h2><i>"Know The Vibe"</i></h2>
         </div>
