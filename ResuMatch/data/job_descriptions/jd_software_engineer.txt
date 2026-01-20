@@ -1,0 +1,7 @@
+We are seeking a Software Engineer with experience in Python and JavaScript.
+
+Requirements:
+- Strong knowledge of React and backend frameworks
+- Experience building REST APIs
+- Familiarity with SQL databases and version control systems like Git
+- Understanding of Agile development practices

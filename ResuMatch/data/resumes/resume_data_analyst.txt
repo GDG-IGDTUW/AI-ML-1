@@ -1,0 +1,13 @@
+Jane Smith
+Data Analyst
+
+Skills:
+Python, Pandas, NumPy, SQL, Excel, Data Visualization
+
+Experience:
+- Analyzed large datasets to uncover trends and insights
+- Created dashboards using Tableau and Matplotlib
+- Worked with stakeholders to define data requirements
+
+Education:
+B.S. in Statistics
