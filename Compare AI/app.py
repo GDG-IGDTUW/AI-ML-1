@@ -54,11 +54,12 @@ def main():
     
     with col1:
         st.subheader("Original File")
-        file1 = st.file_uploader("Upload original file", type=["txt", "pdf"], key="file1")
+        file1 = st.file_uploader("Upload original file (TXT, PDF, DOCX)", type=["txt", "pdf", "docx"], key="file1")
 
     with col2:
         st.subheader("Suspected File")
-        file2 = st.file_uploader("Upload suspected file", type=["txt", "pdf"], key="file2")
+        file2 = st.file_uploader("Upload suspected file (TXT, PDF, DOCX)", type=["txt", "pdf", "docx"],key="file2")
+
     
     if st.button("Check Similarity"):
         if file1 and file2:
@@ -95,5 +96,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
