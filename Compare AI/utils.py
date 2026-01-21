@@ -1,20 +1,38 @@
 import numpy as np
 import PyPDF2
+from docx import Document
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 def read_file_text(uploaded_file):
+    """
+    Reads text from TXT, PDF, and DOCX files.
+    """
+    # TXT
     if uploaded_file.type == "text/plain":
-        return uploaded_file.read().decode("utf-8")
+        return uploaded_file.read().decode("utf-8").strip()
 
+    # PDF
     elif uploaded_file.type == "application/pdf":
-        reader = PyPDF2.PdfReader(uploaded_file)
         text = ""
-        for page in reader.pages:
-            text += page.extract_text() or ""
-        return text
+        try:
+            reader = PyPDF2.PdfReader(uploaded_file)
+            for page in reader.pages:
+                text += page.extract_text() or ""
+        except Exception:
+            return ""
+        return text.strip()
+
+    # DOCX
+    elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        try:
+            doc = Document(uploaded_file)
+            return "\n".join([para.text for para in doc.paragraphs]).strip()
+        except Exception:
+            return ""
 
     return ""
+
 
 def calculate_similarity(text1, text2):
     """
@@ -46,4 +64,5 @@ def calculate_similarity(text1, text2):
     similarity_matrix = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
     
     return similarity_matrix[0][0]
+
 
