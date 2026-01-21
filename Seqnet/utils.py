@@ -4,6 +4,8 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import pickle
 import os
+import json
+from datetime import datetime
 
 def load_data(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -47,3 +49,16 @@ def load_tokenizer(path):
     with open(path, 'rb') as handle:
         tokenizer = pickle.load(handle)
     return tokenizer
+
+def save_dataset_metadata(metadata, path="dataset_metadata.json"):
+    metadata["timestamp"] = datetime.utcnow().isoformat()
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(metadata) + "\n")
+
+def compute_dataset_stats(text):
+    lines = text.splitlines()
+    return {
+        "lines": len(lines),
+        "characters": len(text),
+        "avg_line_length": sum(len(line) for line in lines) / max(len(lines), 1)
+    }
