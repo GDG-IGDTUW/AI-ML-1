@@ -1,3 +1,4 @@
 streamlit
 scikit-learn
 numpy
+PyPDF2
