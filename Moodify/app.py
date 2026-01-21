@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 from sklearn.metrics.pairwise import cosine_similarity
 from preprocessing import preprocess_text
+from train_model import predict_emotion
 
 # Load model components 
 @st.cache_resource(show_spinner=False)
@@ -162,7 +163,6 @@ def local_css():
             font-style: italic;
             opacity: 1 !important;
         }
-
         </style>
         """,
         unsafe_allow_html=True,
@@ -219,12 +219,39 @@ if st.button("Predict Vibe"):
         vec = tfidf.transform([lyrics_clean])
         
         # Predict emotion
-        pred_label = le.inverse_transform(clf.predict(vec))[0]
-        st.success(f"Predicted emotion: **{pred_label}**")
+        pred_labels = predict_emotion(lyrics_input)
+        dominant_emotion, dominant_prob = pred_labels[0]
+
+        df = pd.DataFrame(pred_labels, columns=["Emotion", "Probability"])
+        df["Confidence (%)"] = df["Probability"] * 100
+
+        emoji_map = {
+            "anger": "🔥",     
+            "fear": "🌑",      
+            "joy": "✨",        
+            "love": "❤️",       
+            "sadness": "🌧️", 
+            "surprise": "⚡"   
+        }
+
+        for emotion, prob in pred_labels:
+            st.markdown(
+                f"""
+                <div style="font-size:22px; line-height:1.4;">
+                    <strong>{emoji_map.get(emotion,'')} {emotion.capitalize()}</strong>
+                    <span style="color:#6b5e4b; margin-left:10px;">
+                        {prob*100:.1f}%
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            st.progress(int(prob * 100))
 
         # Suggest top songs with same vibe
         if len(songs_df) > 0:
-            matched_songs_df = songs_df[songs_df['emotion'] == pred_label].copy()
+            matched_songs_df = songs_df[songs_df['emotion'] == dominant_emotion].copy()
 
             if len(matched_songs_df) > 0:
                 input_vec = vec.toarray()[0]
@@ -233,13 +260,13 @@ if st.button("Predict Vibe"):
                 
                 top_songs = matched_songs_df.sort_values(by='similarity', ascending=False).head(5)
                 
-                st.markdown(f"### 🎵 Top {len(top_songs)} **{pred_label}** Songs:")
+                st.markdown(f"### 🎵 Top {len(top_songs)} **{dominant_emotion}** Songs:")
                 for _, row in top_songs.iterrows():
                 
                     link_text = f"**{row['title']}** by *{row['artist']}*"
                     st.markdown(f"{link_text} — [Listen Here]({row['link']})")
             else:
-                st.info(f"No songs found in the database with the emotion: **{pred_label}**.")
+                st.info(f"No songs found in the database with the emotion: **{dominant_emotion}**.")
 
 st.markdown("---")
 st.markdown("Made with ❤️ — Moodify.")
