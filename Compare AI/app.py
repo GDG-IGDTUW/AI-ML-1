@@ -53,7 +53,7 @@ def main():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Original File)
+        st.subheader("Original File")
         file1 = st.file_uploader("Upload original file", type=["txt", "pdf"], key="file1")
 
     with col2:
@@ -95,4 +95,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
