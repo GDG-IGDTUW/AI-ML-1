@@ -47,9 +47,9 @@ WELLBEING_EXERCISES = {
         "Send a short note to a trusted person",
         "Try a soothing routine: warm drink + calming music for 10 to 15 min",
         # New additions
-        "Create a 30-second 'joy snapshot': write what happened, where you were, and how you felt.",
-        "Turn your happiness into motion — dance freely to one song.",
-        "Plan one small future treat that you can look forward to this week."
+        "Name it to tame it: write one sentence starting with 'Right now I feel...' and why.",
+        "5-4-3-2-1 grounding reset: name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste.",
+        "Self-compassion minute: place a hand on your chest, breathe slowly for 60 seconds, and say something kind to yourself."
 
     ],
     "Anger": [
