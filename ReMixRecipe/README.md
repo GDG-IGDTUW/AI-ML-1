@@ -45,9 +45,13 @@ The default data/recipes.csv included in this repository is a small, cleaned sam
 It already contains:
 
 -Lowercase ingredient text
+
 -Comma-separated ingredient lists
+
 -No missing values
+
 -No duplicate entries
+
 -Pre-formatted structure compatible with the ML model
 
 Therefore, no additional preprocessing is required to run the application.
