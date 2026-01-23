@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import calculate_similarity, read_file_text
+from utils import calculate_similarity, read_file_text, find_common_sentences
 
 # Set page configuration to wide mode and add a title
 st.set_page_config(
@@ -69,6 +69,7 @@ def main():
                 
                 similarity_score = calculate_similarity(text1, text2)
                 percentage = round(similarity_score * 100, 2)
+                common_sentences = find_common_sentences(text1, text2)
                 
                 # Dynamic color based on similarity
                 if percentage > 80:
@@ -91,11 +92,24 @@ def main():
                 
                 if percentage > 0:
                     st.success("Analysis Complete.")
+
+                    if common_sentences:
+                        st.subheader("🔎 Overlapping Text Segments")
+                    for sentence in common_sentences:
+                        st.markdown(
+                            f"<div style='background-color:#fff3cd; padding:8px; margin-bottom:6px; border-radius:6px;'>"
+                            f"{sentence}</div>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.info("No exact overlapping sentences found.")
+
         else:
             st.warning("Please upload both documents to compare.")
 
 if __name__ == "__main__":
     main()
+
 
 
 
