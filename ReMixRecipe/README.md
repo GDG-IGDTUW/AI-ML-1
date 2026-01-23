@@ -72,22 +72,22 @@ data/raw/
 Raw datasets from Kaggle may contain inconsistent formatting, missing values, or measurement noise.
 Before training the model, apply the following steps:
 
-1️⃣ Remove Duplicates- Ensure no repeated recipes exist to prevent model bias.
+1️⃣ **Remove Duplicates**- Ensure no repeated recipes exist to prevent model bias.
 
-2️⃣ Handle Missing Values- Drop rows where ingredients or cuisine are null.
+2️⃣ **Handle Missing Values**- Drop rows where ingredients or cuisine are null.
 
-3️⃣ Standardize Text
+3️⃣ **Standardize Text**
 -Convert all text to lowercase
 -Remove special characters and numeric measurements (e.g., "1 tbsp", "200g")
 -Remove extra whitespace
 
-4️⃣ Format Ingredients
+4️⃣ **Format Ingredients**
 -Ensure ingredients are stored as a single comma-separated string.
 -Example required format:
 -ingredients: "rice, chicken, curry powder"
 -cuisine: "indian"
 
-5️⃣ Save Cleaned Dataset
+5️⃣ **Save Cleaned Dataset**
 
 Export the cleaned dataset as:
    ```bash
