@@ -211,8 +211,22 @@ lyrics_input = st.text_area(
 
 # Predict button
 if st.button("Predict Vibe"):
+    lyrics_input = lyrics_input.strip()
+
+    # Count words
+    word_count = len([w for w in lyrics_input.split() if w.strip() != ""])
+
+    MIN_WORDS = 20
+
     if not lyrics_input.strip():
         st.warning("Please enter some lyrics first!")
+
+    elif word_count < MIN_WORDS:
+        st.info(
+            f"Please enter at least **{MIN_WORDS} words** for accurate emotion prediction.\n\n"
+            f"Current word count: **{word_count}**"
+        )
+
     else:
         # Preprocess input
         lyrics_clean = preprocess_text(lyrics_input)

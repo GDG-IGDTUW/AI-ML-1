@@ -102,7 +102,12 @@ print("TF-IDF shapes -> X_train:", X_train.shape, "X_val:", X_val.shape, "X_test
 # ---------------------------
 # 6) Train Logistic Regression
 # ---------------------------
-clf = LogisticRegression(max_iter=1000, multi_class='multinomial', solver='lbfgs', random_state=42)
+clf = LogisticRegression(
+    max_iter=1000,
+    solver='lbfgs',
+    random_state=42
+)
+
 clf.fit(X_train, y_train)
 
 y_test_pred = clf.predict(X_test)
@@ -131,14 +136,12 @@ param_grid = {
 grid = GridSearchCV(
     LogisticRegression(
         max_iter=2000,
-        multi_class='multinomial',
+        solver='lbfgs',
         random_state=42
     ),
-    param_grid=param_grid,
-    scoring="f1_weighted",
-    cv=5,
-    n_jobs=-1,
-    verbose=1
+    param_grid,
+    scoring='f1_weighted',
+    cv=3
 )
 
 print("\nRunning GridSearchCV...")
