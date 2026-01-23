@@ -62,7 +62,19 @@ def calculate_similarity(text1, text2):
         
     # Calculate the Cosine Similarity
     similarity_matrix = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
-    
+
     return similarity_matrix[0][0]
+
+def find_common_sentences(text1, text2):
+    """
+    Find overlapping sentences between two texts.
+    Minimal and safe exact-match approach.
+    """
+    sentences1 = set([s.strip().lower() for s in text1.split('.') if len(s.strip()) > 20])
+    sentences2 = set([s.strip().lower() for s in text2.split('.') if len(s.strip()) > 20])
+
+    common = sentences1.intersection(sentences2)
+    return list(common)
+
 
 
