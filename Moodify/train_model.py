@@ -188,15 +188,57 @@ def predict_emotion(lyrics, tfidf, clf, le):
     return top_3
 
 def explain_prediction(lyrics, tfidf, clf, le, top_k=3):
+    """
+    Returns the top keywords from the user's INPUT (not stemmed)
+    that contributed most to the predicted emotion.
+    """
+    from nltk.stem.porter import PorterStemmer
+    ps = PorterStemmer()
+    
+    # Preprocess and vectorize
     txt = preprocess_text(lyrics)
     vec = tfidf.transform([txt])
     pred_class_id = clf.predict(vec)[0]
+    
+    # Get feature names and weights
     feature_names = tfidf.get_feature_names_out()
     class_weights = clf.coef_[pred_class_id]
     present_indices = vec.nonzero()[1]
-    word_scores = [(feature_names[idx], class_weights[idx]*vec[0, idx]) for idx in present_indices]
-    word_scores = sorted(word_scores, key=lambda x: abs(x[1]), reverse=True)
-    return [w for w, _ in word_scores[:top_k]]
+    
+    # Calculate scores (weight * tfidf value)
+    word_scores = [
+        (feature_names[idx], class_weights[idx] * vec[0, idx]) 
+        for idx in present_indices
+    ]
+    
+    # Sort by score (highest positive = strongest contributor)
+    word_scores = sorted(word_scores, key=lambda x: x[1], reverse=True)
+    
+    # Keep only positive contributors
+    top_stemmed = [w for w, score in word_scores if score > 0][:top_k]
+    
+    # --- MAP STEMMED WORDS BACK TO ORIGINAL INPUT WORDS ---
+    # Extract original words from user input
+    import re
+    original_words = re.findall(r"[a-zA-Z']+", lyrics.lower())
+    
+    matched_originals = []
+    used_originals = set()  # Avoid duplicates
+    
+    for stemmed in top_stemmed:
+        found = False
+        for orig in original_words:
+            if orig not in used_originals and ps.stem(orig) == stemmed:
+                matched_originals.append(orig)
+                used_originals.add(orig)
+                found = True
+                break
+        if not found:
+            # Fallback: use stemmed word if no original match
+            matched_originals.append(stemmed)
+    
+    return matched_originals[:top_k]
+
 
 # ---------------------------
 # Run training if script is executed directly
