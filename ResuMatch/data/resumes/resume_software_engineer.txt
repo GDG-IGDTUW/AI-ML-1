@@ -1,0 +1,13 @@
+John Doe
+Software Engineer
+
+Skills:
+Python, JavaScript, React, SQL, Git, REST APIs
+
+Experience:
+- Built web applications using React and Flask
+- Developed RESTful APIs and integrated third-party services
+- Collaborated with cross-functional teams using Agile methodologies
+
+Education:
+B.S. in Computer Science

@@ -1,0 +1,14 @@
+Jordan Patel
+Machine Learning Engineer
+
+Skills:
+Python, Machine Learning, Deep Learning, TensorFlow, PyTorch, Scikit-learn, SQL, Data Modeling
+
+Experience:
+- Built and deployed machine learning models for prediction and classification
+- Worked with large datasets to train and evaluate models
+- Collaborated with data scientists and software engineers to productionize ML solutions
+- Optimized model performance and monitored results
+
+Education:
+M.S. in Computer Science

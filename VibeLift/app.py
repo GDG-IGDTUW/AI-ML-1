@@ -47,9 +47,9 @@ WELLBEING_EXERCISES = {
         "Send a short note to a trusted person",
         "Try a soothing routine: warm drink + calming music for 10 to 15 min",
         # New additions
-        "Create a 30-second 'joy snapshot': write what happened, where you were, and how you felt.",
-        "Turn your happiness into motion — dance freely to one song.",
-        "Plan one small future treat that you can look forward to this week."
+        "Name it to tame it: write one sentence starting with 'Right now I feel...' and why.",
+        "5-4-3-2-1 grounding reset: name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste.",
+        "Self-compassion minute: place a hand on your chest, breathe slowly for 60 seconds, and say something kind to yourself."
 
     ],
     "Anger": [
@@ -311,6 +311,7 @@ if model_and_vect[0] is None or model_and_vect[1] is None:
 
 # --- Input Area ---
 st.markdown("### 🌸 Take a mindful pause: how does this moment feel?")
+
 user_text = st.text_area(
     "Enter your feelings here:", 
     height=200, 
@@ -318,6 +319,62 @@ user_text = st.text_area(
     label_visibility="collapsed",
     key="user_input_text"
 )
+
+# --- Live Word Count + Engagement Hint ---
+word_count = len(user_text.split()) if user_text else 0
+
+
+# STATE 1: No words typed yet
+if word_count == 0:
+    st.markdown(
+        """
+        <div style="
+            text-align: right;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: -6px;
+        ">
+            Write at least 20 words for a better vibe check ✨
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# STATE 2: Started typing but less than 20 words
+elif word_count < 20:
+    st.markdown(
+        f"""
+        <div style="
+            text-align: right;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: -6px;
+        ">
+            {word_count} words
+            <div style="font-size: 0.8rem; color:#94a3b8;">
+                Try writing a bit more for a better vibe check 
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+elif word_count >= 20:
+    st.markdown(
+        f"""
+        <div style="
+            text-align: right;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: -6px;
+        ">
+            {word_count} words — great detail!
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 # Use Streamlit state to handle button presses and ensure flow is correct
 if 'detect_clicked' not in st.session_state:

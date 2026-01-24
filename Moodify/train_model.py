@@ -1,23 +1,18 @@
 # train_model.py
 import os
-import re
 import pandas as pd
 import numpy as np
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import f1_score
 
 import joblib
 
-# ---------------------------
-# 0) NLTK setup
-# ---------------------------
-nltk.download('stopwords', quiet=True)
+from preprocessing import preprocess_text, basic_preprocess
 
 # ---------------------------
 # 1) Paths - update if needed
@@ -52,31 +47,25 @@ def detect_columns(df):
 TEXT_COL, LABEL_COL = detect_columns(train_df)
 print("Using TEXT column:", TEXT_COL, "| LABEL column:", LABEL_COL)
 
-# ---------------------------
-# 3) Preprocessing
-# ---------------------------
-stop_words = set(stopwords.words("english"))
-if "not" in stop_words:
-    stop_words.remove("not")
-ps = PorterStemmer()
+print("Preprocessing training data...")
+train_df['text_clean'] = train_df[TEXT_COL].apply(preprocess_text)
 
-def preprocess_text(s):
-    if pd.isna(s): return ""
-    s = str(s).lower()
-    s = re.sub(r'\[.*?\]', ' ', s)
-    s = re.sub(r'https?://\S+|www\.\S+', ' ', s)
-    s = re.sub(r"[^a-z\s']", ' ', s)
-    words = s.split()
-    words = [ps.stem(w) for w in words if w not in stop_words and len(w) > 1]
-    return " ".join(words)
+print("Preprocessing validation data (no spell correction)...")
+val_df['text_clean'] = val_df[TEXT_COL].apply(basic_preprocess)
 
-for df in (train_df, val_df, test_df):
-    df['text_clean'] = df[TEXT_COL].apply(preprocess_text)
-    df.dropna(subset=['text_clean'], inplace=True)
+print("Preprocessing test data (no spell correction)...")
+test_df['text_clean'] = test_df[TEXT_COL].apply(basic_preprocess)
+
+
+def clean_df(df):
+    df = df.dropna(subset=['text_clean'])
     df = df[df['text_clean'].str.strip() != ""]
-train_df = train_df[train_df['text_clean'].str.strip() != ""].reset_index(drop=True)
-val_df   = val_df[val_df['text_clean'].str.strip() != ""].reset_index(drop=True)
-test_df  = test_df[test_df['text_clean'].str.strip() != ""].reset_index(drop=True)
+    return df.reset_index(drop=True)
+
+train_df = clean_df(train_df)
+val_df   = clean_df(val_df)
+test_df  = clean_df(test_df)
+
 print(f"After cleaning -> train: {len(train_df)}, val: {len(val_df)}, test: {len(test_df)}")
 
 # ---------------------------
@@ -116,40 +105,104 @@ print("TF-IDF shapes -> X_train:", X_train.shape, "X_val:", X_val.shape, "X_test
 clf = LogisticRegression(max_iter=1000, multi_class='multinomial', solver='lbfgs', random_state=42)
 clf.fit(X_train, y_train)
 
-# Optional validation check
-y_val_pred = clf.predict(X_val)
-print("\nValidation Accuracy:", accuracy_score(y_val, y_val_pred))
-print("Val classification report:")
-print(classification_report(y_val, y_val_pred, target_names=le.classes_))
-
-# ---------------------------
-# 7) Test set evaluation
-# ---------------------------
 y_test_pred = clf.predict(X_test)
 print("\nTest Accuracy:", accuracy_score(y_test, y_test_pred))
 print("Test classification report:")
 print(classification_report(y_test, y_test_pred, target_names=le.classes_))
-print("Test confusion matrix:")
-print(confusion_matrix(y_test, y_test_pred))
+
+# ---------------------------
+# BEFORE tuning metrics
+# ---------------------------
+before_acc = accuracy_score(y_test, y_test_pred)
+before_f1 = f1_score(y_test, y_test_pred, average="weighted")
+
+print(f"\nBEFORE TUNING -> Accuracy: {before_acc:.4f}")
+print(f"BEFORE TUNING -> F1-score: {before_f1:.4f}")
+
+
+# ---------------------------
+# 7B) Hyperparameter tuning using GridSearchCV
+# ---------------------------
+param_grid = {
+    "C": [0.01, 0.1, 1, 10],
+    "solver": ["lbfgs", "saga"]
+}
+
+grid = GridSearchCV(
+    LogisticRegression(
+        max_iter=2000,
+        multi_class='multinomial',
+        random_state=42
+    ),
+    param_grid=param_grid,
+    scoring="f1_weighted",
+    cv=5,
+    n_jobs=-1,
+    verbose=1
+)
+
+print("\nRunning GridSearchCV...")
+grid.fit(X_train, y_train)
+
+best_clf = grid.best_estimator_
+print("Best parameters found:", grid.best_params_)
+
+# ---------------------------
+# AFTER tuning metrics
+# ---------------------------
+y_test_pred_best = best_clf.predict(X_test)
+
+after_acc = accuracy_score(y_test, y_test_pred_best)
+after_f1 = f1_score(y_test, y_test_pred_best, average="weighted")
+
+print(f"\nAFTER TUNING -> Accuracy: {after_acc:.4f}")
+print(f"AFTER TUNING -> F1-score: {after_f1:.4f}")
+
+print("\nAFTER TUNING classification report:")
+print(classification_report(y_test, y_test_pred_best, target_names=le.classes_))
+
+# Optional validation check
+y_val_pred_best = best_clf.predict(X_val)
+print("\nValidation Accuracy (BEST MODEL):", accuracy_score(y_val, y_val_pred_best))
+print("Val classification report (BEST MODEL):")
+print(classification_report(y_val, y_val_pred_best, target_names=le.classes_))
 
 # ---------------------------
 # 8) Save model
 # ---------------------------
 OUT = "tfidf_logreg_song_mood.pkl"
-joblib.dump({'tfidf': tfidf, 'model': clf, 'label_encoder': le}, OUT)
-print(f"\nSaved TF-IDF + LogisticRegression + LabelEncoder to: {OUT}")
+joblib.dump(
+    {
+        'tfidf': tfidf,
+        'model': best_clf,
+        'label_encoder': le
+    },
+    OUT
+)
 
 # ---------------------------
 # 9) Optional helper for quick testing
 # ---------------------------
-def predict_lyrics(lyrics):
+def predict_emotion(lyrics):
     txt = preprocess_text(lyrics)
     vec = tfidf.transform([txt])
-    pred_id = clf.predict(vec)[0]
-    return le.inverse_transform([pred_id])[0]
+
+    probs = best_clf.predict_proba(vec)[0]
+    emotion_labels = le.inverse_transform(best_clf.classes_)
+
+    emotion_probs = dict(zip(emotion_labels, probs))
+
+    top_3 = sorted(
+        emotion_probs.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:3]
+
+    return top_3
+
 
 # Example
 print("\nExample predictions:")
-print("Happy:", predict_lyrics("I am dancing and feeling so happy, life is beautiful"))
-print("Sad:", predict_lyrics("Tears fall every night, my heart hurts and I'm alone"))
-print("Angry:", predict_lyrics("I will not forgive you, you made me furious"))
+print("Happy:", predict_emotion("I am dancing and feeling so happy, life is beautiful"))
+print("Sad:", predict_emotion("Tears fall every night, my heart hurts and I'm alone"))
+print("Angry:", predict_emotion("I will not forgive you, you made me furious"))
