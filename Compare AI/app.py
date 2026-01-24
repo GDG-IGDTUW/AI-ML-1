@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import calculate_similarity
+from utils import calculate_similarity, read_file_text, find_common_sentences
 
 # Set page configuration to wide mode and add a title
 st.set_page_config(
@@ -48,23 +48,28 @@ st.markdown("""
 
 def main():
     st.title("Compare AI")
-    st.markdown("Check how similar two texts are using AI-powered Cosine Similarity.")
+    st.markdown("Check how similar two files are using AI-powered Cosine Similarity.")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Original Text")
-        text1 = st.text_area("Enter the reference text here...", height=300, key="text1")
-        
+        st.subheader("Original File")
+        file1 = st.file_uploader("Upload original file (TXT, PDF, DOCX)", type=["txt", "pdf", "docx"], key="file1")
+
     with col2:
-        st.subheader("Suspected Text")
-        text2 = st.text_area("Enter the text to compare here...", height=300, key="text2")
-        
+        st.subheader("Suspected File")
+        file2 = st.file_uploader("Upload suspected file (TXT, PDF, DOCX)", type=["txt", "pdf", "docx"],key="file2")
+
+    
     if st.button("Check Similarity"):
-        if text1 and text2:
+        if file1 and file2:
             with st.spinner("Calculating similarity..."):
+                text1 = read_file_text(file1)
+                text2 = read_file_text(file2)
+                
                 similarity_score = calculate_similarity(text1, text2)
                 percentage = round(similarity_score * 100, 2)
+                common_sentences = find_common_sentences(text1, text2)
                 
                 # Dynamic color based on similarity
                 if percentage > 80:
@@ -87,8 +92,24 @@ def main():
                 
                 if percentage > 0:
                     st.success("Analysis Complete.")
+
+                    if common_sentences:
+                        st.subheader("🔎 Overlapping Text Segments")
+                    for sentence in common_sentences:
+                        st.markdown(
+                            f"<div style='background-color:#fff3cd; padding:8px; margin-bottom:6px; border-radius:6px;'>"
+                            f"{sentence}</div>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.info("No exact overlapping sentences found.")
+
         else:
-            st.warning("Please enter text in both fields to compare.")
+            st.warning("Please upload both documents to compare.")
 
 if __name__ == "__main__":
     main()
+
+
+
+
