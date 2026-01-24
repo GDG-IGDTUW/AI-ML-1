@@ -45,7 +45,9 @@ def main():
     # Load Data
     data_path = 'data/movies_sample.csv'
     df = utils.load_data(data_path)
-
+    ratings_path = 'data/ratings_sample.csv'
+    ratings_df = pd.read_csv(ratings_path)
+    
     if df is not None:
         # Preprocess and Compute Similarity Matrix
         # (In a real production app, you might cache this step or load a pre-computed model)
@@ -63,6 +65,15 @@ def main():
             "Select or type a movie name:",
             options=[""] + movie_titles, # Add empty option at start
             help="Start typing to search for a movie in our database."
+        )
+
+        # --- Collaborative Filtering Section ---
+        st.subheader("Personalized Recommendations (Collaborative Filtering)")
+
+        user_id = st.selectbox(
+            "Select User ID",
+            ratings_df['userId'].unique(),
+            help="Choose a user to get personalized recommendations"
         )
 
         if st.button("Find Similar Movies"):
@@ -91,6 +102,25 @@ def main():
                     st.warning("No recommendations found. Try another movie!")
             else:
                 st.error("Please select a movie first.")
+
+            # --- Collaborative Filtering Button ---
+            recs = None
+            if st.button("Get Personalized Recommendations"):
+                recs = utils.collaborative_recommendations(
+                ratings_df,
+                user_id=user_id,
+                top_n=5
+            )
+
+            if recs:
+                st.success("Recommended for you:")
+                for movie in recs:
+                    st.write("🎬", movie)
+            else:
+                st.warning("No personalized recommendations available.")
+
+        else:
+                st.warning("No personalized recommendations available.")     
                 
         # Show dataset stats (optional, good for transparency)
         with st.expander("See Dataset used"):
