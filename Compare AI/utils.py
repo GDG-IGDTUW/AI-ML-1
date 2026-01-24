@@ -84,7 +84,7 @@ def find_common_sentences(text1, text2):
     common = sentences1.intersection(sentences2)
     return list(common)
 
- def preprocess_text(text):
+def preprocess_text(text):
     """
     Standardized text preprocessing:
     - lowercase
@@ -108,6 +108,7 @@ def find_common_sentences(text1, text2):
     words = [w for w in text.split() if w not in ENGLISH_STOP_WORDS]
 
     return " ".join(words)
+
 
 
 
