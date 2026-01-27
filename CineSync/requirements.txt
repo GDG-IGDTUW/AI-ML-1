@@ -1,4 +1,5 @@
 streamlit
 pandas
 scikit-learn
-numpy
+scikit-surprise==1.1.3
+numpy<2.0

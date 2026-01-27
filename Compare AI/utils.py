@@ -3,6 +3,8 @@ import PyPDF2
 from docx import Document
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import re
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 def read_file_text(uploaded_file):
     """
@@ -47,7 +49,9 @@ def calculate_similarity(text1, text2):
     """
     if not text1 or not text2:
         return 0.0
-        
+
+    text1 = preprocess_text(text1)
+    text2 = preprocess_text(text2)
     documents = [text1, text2]
     
     # Create the Vectorizer
@@ -70,11 +74,41 @@ def find_common_sentences(text1, text2):
     Find overlapping sentences between two texts.
     Minimal and safe exact-match approach.
     """
-    sentences1 = set([s.strip().lower() for s in text1.split('.') if len(s.strip()) > 20])
-    sentences2 = set([s.strip().lower() for s in text2.split('.') if len(s.strip()) > 20])
+    text1 = preprocess_text(text1)
+    text2 = preprocess_text(text2)
+
+    sentences1 = set([s.strip() for s in text1.split('.') if len(s.strip()) > 20])
+    sentences2 = set([s.strip() for s in text2.split('.') if len(s.strip()) > 20])
+
 
     common = sentences1.intersection(sentences2)
     return list(common)
+
+def preprocess_text(text):
+    """
+    Standardized text preprocessing:
+    - lowercase
+    - remove punctuation/special characters
+    - remove extra whitespace
+    - remove stopwords
+    """
+    if not text:
+        return ""
+
+    # lowercase
+    text = text.lower()
+
+    # remove punctuation & special characters
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+
+    # remove extra whitespace
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # remove stopwords
+    words = [w for w in text.split() if w not in ENGLISH_STOP_WORDS]
+
+    return " ".join(words)
+
 
 
 
