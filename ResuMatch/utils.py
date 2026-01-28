@@ -6,6 +6,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 import nltk
 from nltk.corpus import stopwords
 
+from docx import Document
+from io import BytesIO
+
+def extract_text_from_docx(uploaded_file):
+    doc = Document(uploaded_file)
+    text = []
+    for para in doc.paragraphs:
+        text.append(para.text)
+    return " ".join(text)
+
 # Download stopwords if not already present
 try:
     nltk.data.find('corpora/stopwords')

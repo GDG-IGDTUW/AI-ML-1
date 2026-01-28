@@ -1,5 +1,7 @@
 import streamlit as st
-from utils import extract_text_from_pdf, clean_text, calculate_similarity, get_missing_keywords
+#modify import
+from utils import extract_text_from_pdf, extract_text_from_docx, clean_text, calculate_similarity, get_missing_keywords
+
 
 # Set page configuration
 st.set_page_config(
@@ -46,7 +48,19 @@ def main():
 
     with col1:
         st.info("Step 1: Upload Resume")
-        uploaded_file = st.file_uploader("Upload your Resume (PDF)", type=["pdf"])
+
+        # Update uploader UI
+        uploaded_file = st.file_uploader(
+            "📂 Drag & Drop your Resume here (PDF or DOCX)",
+            type=["pdf", "docx"],
+            help="You can drag and drop your resume file or browse from your computer."
+            )
+        
+        #Show file info preview
+        if uploaded_file:
+            st.success(f"Uploaded: {uploaded_file.name}")
+            st.caption(f"File type: {uploaded_file.type}")
+
 
     with col2:
         st.info("Step 2: Job Description")
@@ -57,10 +71,18 @@ def main():
         if uploaded_file is not None and job_description:
             with st.spinner("Analyzing..."):
                 # 1. Extract Text from PDF
-                resume_text = extract_text_from_pdf(uploaded_file)
+                if uploaded_file.name.endswith(".pdf"):
+                     resume_text = extract_text_from_pdf(uploaded_file)
+                elif uploaded_file.name.endswith(".docx"):
+                     resume_text = extract_text_from_docx(uploaded_file)
+                else:
+                     st.error("Unsupported file format.")
+                     return
+
+
                 
                 if not resume_text:
-                    st.error("Could not extract text from the PDF. Please try another file.")
+                    st.error("Could not extract text from the file. Please try another file.")
                     return
 
                 # 2. Preprocess Texts
