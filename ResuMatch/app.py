@@ -1,6 +1,7 @@
 import streamlit as st
 #modify import
 from utils import extract_text_from_pdf, extract_text_from_docx, clean_text, calculate_similarity, get_missing_keywords
+from langdetect import detect
 
 
 # Set page configuration
@@ -79,11 +80,16 @@ def main():
                      st.error("Unsupported file format.")
                      return
 
-
                 
                 if not resume_text:
                     st.error("Could not extract text from the file. Please try another file.")
                     return
+                
+                try:
+                    lang_code = detect(resume_text)
+                    st.caption(f"Detected Language: **{lang_code.upper()}**")
+                except:
+                    pass
 
                 # 2. Preprocess Texts
                 cleaned_resume = clean_text(resume_text)
