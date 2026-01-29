@@ -1,0 +1,7 @@
+The Data Analyst will be responsible for analyzing complex datasets.
+
+Requirements:
+- Proficiency in Python, Pandas, and SQL
+- Experience with data visualization tools
+- Ability to communicate insights to non-technical stakeholders
+- Strong analytical and problem-solving skills
