@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import utils
+import uuid
 
 # Page configuration
 st.set_page_config(
@@ -47,7 +48,9 @@ def main():
     df = utils.load_data(data_path)
     ratings_path = 'data/ratings_sample.csv'
     ratings_df = pd.read_csv(ratings_path)
-    
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+        
     if df is not None:
         # Preprocess and Compute Similarity Matrix
         # (In a real production app, you might cache this step or load a pre-computed model)
@@ -67,6 +70,17 @@ def main():
             help="Start typing to search for a movie in our database."
         )
 
+        is_host = st.checkbox(
+            "I am the host (controls play/pause)",
+            key="group_watch_host_checkbox"
+        )
+
+        room_id = st.text_input(
+            "Enter Group Watch Room ID",
+            help="Share this Room ID with friends to watch together"
+        )
+
+
         # --- Collaborative Filtering Section ---
         st.subheader("Personalized Recommendations (Collaborative Filtering)")
 
@@ -77,6 +91,14 @@ def main():
         )
 
         if st.button("Find Similar Movies"):
+            if room_id:
+                utils.emit_sync_event(
+                room_id=room_id,
+                user_id=st.session_state.session_id,
+                action="play",
+                timestamp=0
+                )
+                
             if selected_movie:
                 recommendations = utils.get_recommendations(selected_movie, df_processed, cosine_sim)
                 
@@ -116,12 +138,7 @@ def main():
                 st.success("Recommended for you:")
                 for movie in recs:
                     st.write("🎬", movie)
-            else:
-                st.warning("No personalized recommendations available.")
-
-        else:
-                st.warning("No personalized recommendations available.")     
-                
+             
         # Show dataset stats (optional, good for transparency)
         with st.expander("See Dataset used"):
             st.dataframe(df.style.highlight_max(axis=0))
