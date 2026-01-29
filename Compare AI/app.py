@@ -57,38 +57,47 @@ def main():
         file1 = st.file_uploader("Upload original file (TXT, PDF, DOCX)", type=["txt", "pdf", "docx"], key="file1")
 
     with col2:
-        st.subheader("Suspected File")
-        file2 = st.file_uploader("Upload suspected file (TXT, PDF, DOCX)", type=["txt", "pdf", "docx"],key="file2")
+        st.subheader("Suspected Texts (Multiple)")
+        multi_text = st.text_area(
+        "Enter multiple texts (one per line)...",
+        height=300,
+        key="multi_text"
+    )
 
-    
+        
     if st.button("Check Similarity"):
-        if file1 and file2:
+        if text1 and multi_text:
+            texts_to_compare = [t.strip() for t in multi_text.split("\n") if t.strip()]
+
             with st.spinner("Calculating similarity..."):
-                text1 = read_file_text(file1)
-                text2 = read_file_text(file2)
+                results = []
+                for idx, text in enumerate(texts_to_compare):
+                     score = calculate_similarity(text1, text)
+                     percentage = round(score * 100, 2)
+                     results.append((idx + 1, percentage))
+
                 
-                similarity_score = calculate_similarity(text1, text2)
-                percentage = round(similarity_score * 100, 2)
-                common_sentences = find_common_sentences(text1, text2)
-                
-                # Dynamic color based on similarity
-                if percentage > 80:
-                    color = "#ff4b4b" # Red for high similarity
-                    msg = "⚠️ High Similarity Detected!"
-                elif percentage > 40:
-                    color = "#ffa500" # Orange for moderate
-                    msg = "⚠️ Moderate Similarity."
-                else:
-                    color = "#4CAF50" # Green for low
-                    msg = "✅ Low Similarity."
-                
-                st.markdown(f"""
-                <div class="result-box" style="background-color: {color}20; border: 2px solid {color};">
-                    <h2 style="color: {color};">{msg}</h2>
-                    <h1 style="color: {color}; font-size: 60px;">{percentage}%</h1>
-                    <p>Match Score</p>
-                </div>
-                """, unsafe_allow_html=True)
+                st.subheader("Similarity Results")
+                for idx, percentage in results:
+                     if percentage > 80:
+                          color = "#ff4b4b"
+                          msg = "⚠️ High Similarity Detected!"
+                     elif percentage > 40:
+                          color = "#ffa500"
+                          msg = "⚠️ Moderate Similarity."
+                     else:
+                          color = "#4CAF50"
+                          msg = "✅ Low Similarity."
+                          
+                     st.markdown(f"""
+                                 <div class="result-box" style="background-color: {color}20; border: 2px solid {color};">
+                                 <h3 style="color: {color};">Text {idx}</h3>
+        <h2 style="color: {color};">{msg}</h2>
+        <h1 style="color: {color}; font-size: 40px;">{percentage}%</h1>
+        <p>Match Score</p>
+    </div>
+    """, unsafe_allow_html=True)
+
                 
                 if percentage > 0:
                     st.success("Analysis Complete.")
@@ -105,7 +114,7 @@ def main():
                         st.info("No exact overlapping sentences found.")
 
         else:
-            st.warning("Please upload both documents to compare.")
+            st.warning("Please enter the reference text and at least one comparison text.")
 
 if __name__ == "__main__":
     main()
