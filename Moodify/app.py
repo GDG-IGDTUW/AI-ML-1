@@ -216,10 +216,8 @@ lyrics_input = st.text_area(
 # Predict button
 if st.button("Predict Vibe"):
     lyrics_input = lyrics_input.strip() 
-
-    # Count words 
-    word_count = len(lyrics_input.split()) 
     MIN_WORDS = 20
+    word_count = len(lyrics_input.split())
 
     if not lyrics_input:
         st.warning("Please enter some lyrics first!")
@@ -260,7 +258,6 @@ if st.button("Predict Vibe"):
 
         # Display keywords
         st.markdown("### 🔍 Why this vibe?")
-
         if keywords:
             pill_html = "".join(
                 f"<span style='display:inline-block;background:#d6bca8;color:#2b2b2b;"
