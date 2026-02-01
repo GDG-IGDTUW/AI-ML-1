@@ -178,14 +178,27 @@ def train_and_save_model():
 # ---------------------------
 # 9) Helper for inference
 # ---------------------------
-def predict_emotion(lyrics, tfidf, clf, le):
+def predict_emotion(lyrics, tfidf, clf, le, threshold=0.4):
+    """
+    Returns top emotions with probabilities. 
+    If the model is not confident (max probability < threshold), returns 'Neutral'.
+    """
     txt = preprocess_text(lyrics)
     vec = tfidf.transform([txt])
     probs = clf.predict_proba(vec)[0]
     emotion_labels = le.inverse_transform(clf.classes_)
     emotion_probs = dict(zip(emotion_labels, probs))
-    top_3 = sorted(emotion_probs.items(), key=lambda x: x[1], reverse=True)[:3]
-    return top_3
+
+    max_prob = max(probs)
+
+    if max_prob < threshold:
+        # Model not confident
+        return [("Neutral", 1.0)]
+    else:
+        # Model confident → return top 3 emotions as before
+        top_3 = sorted(emotion_probs.items(), key=lambda x: x[1], reverse=True)[:3]
+        return top_3
+
 
 def explain_prediction(lyrics, tfidf, clf, le, top_k=3):
     """
