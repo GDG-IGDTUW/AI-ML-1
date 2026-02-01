@@ -4,6 +4,7 @@ import joblib
 from sklearn.metrics.pairwise import cosine_similarity
 from preprocessing import preprocess_text
 from train_model import predict_emotion, explain_prediction
+from langdetect import detect, LangDetectException
 
 
 
@@ -224,11 +225,20 @@ if st.button("Predict Vibe"):
     elif word_count < MIN_WORDS: 
         st.info( f"Please enter at least **{MIN_WORDS} words** for accurate emotion prediction.\n\n" f"Current word count: **{word_count}**" )
     else:
+        # Detect language
+        try:
+            detected_lang = detect(lyrics_input)
+        except LangDetectException:
+            detected_lang = None
+
+        if detected_lang != "en":
+            st.warning("Moodify currently only supports English lyrics.")
+            st.stop()
+
         # Preprocess input
         lyrics_clean = preprocess_text(lyrics_input)
         vec = tfidf.transform([lyrics_clean])
-        
-        # Predict emotion
+
         # Predict emotion
         pred_labels = predict_emotion(lyrics_input, tfidf, clf, le)
         dominant_emotion, dominant_prob = pred_labels[0]  # <-- add this line
