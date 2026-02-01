@@ -70,6 +70,8 @@ def main():
             help="Start typing to search for a movie in our database."
         )
 
+        uplifting_only = st.checkbox("Show only uplifting movies 😊")
+
         is_host = st.checkbox(
             "I am the host (controls play/pause)",
             key="group_watch_host_checkbox"
@@ -112,6 +114,9 @@ def main():
                         row = df[df['title'] == movie].iloc[0]
                         genres = row['genres']
                         plot = row['plot']
+
+                        if uplifting_only and not utils.is_uplifting(plot):
+                            continue
                         
                         st.markdown(f"""
                         <div class="recommendation-card">
