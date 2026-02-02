@@ -1,7 +1,7 @@
 streamlit
 pandas
 scikit-learn
-
 numpy<2.0
-nltk
+vaderSentiment==3.3.2
+
 
