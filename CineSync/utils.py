@@ -10,12 +10,7 @@ if SURPRISE_AVAILABLE:
     from surprise.model_selection import train_test_split
 import asyncio
 import json
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import nltk
-
-
-nltk.download('vader_lexicon', quiet=True)
-sid = SentimentIntensityAnalyzer()
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 def load_data(filepath):
     """
@@ -172,19 +167,17 @@ def emit_sync_event(room_id, user_id, action, timestamp):
     # In real implementation, this will be sent via WebSocket server
     print("SYNC EVENT:", json.dumps(event))
 
-def is_uplifting(text, threshold=0.3):
+# --- Sentiment utilities (Issue #46) ---
+
+_analyzer = SentimentIntensityAnalyzer()
+
+def is_uplifting_review(text, threshold=0.4):
     """
-    Uses VADER sentiment to check if text is uplifting (positive).
-    
-    Args:
-        text (str): Review or plot text
-        threshold (float): compound score threshold
-    
-    Returns:
-        bool
+    Returns True if review sentiment is uplifting.
+    Uses VADER compound score.
     """
     if not isinstance(text, str) or not text.strip():
         return False
 
-    score = sid.polarity_scores(text)
+    score = _analyzer.polarity_scores(text)
     return score["compound"] >= threshold
