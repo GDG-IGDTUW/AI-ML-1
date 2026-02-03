@@ -13,9 +13,21 @@ def calculate_similarity(text1, text2):
     Returns:
         float: Similarity score between 0.0 and 1.0.
     """
+
+    if not isinstance(text1, str) or not isinstance(text2, str):
+        return 0.0
+
+    text1 = text1.strip()
+    text2 = text2.strip()
+
     if not text1 or not text2:
         return 0.0
-        
+    
+    if len(text1.split()) < 3 or len(text2.split()) < 3:
+        return 0.0
+
+
+
     documents = [text1, text2]
     
     # Create the Vectorizer
