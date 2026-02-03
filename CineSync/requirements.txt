@@ -1,5 +1,7 @@
 streamlit
 pandas
 scikit-learn
-scikit-surprise==1.1.3
 numpy<2.0
+vaderSentiment==3.3.2
+
+
