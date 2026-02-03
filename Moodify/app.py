@@ -3,7 +3,10 @@ import pandas as pd
 import joblib
 from sklearn.metrics.pairwise import cosine_similarity
 from preprocessing import preprocess_text
-from train_model import predict_emotion
+from train_model import predict_emotion, explain_prediction
+from langdetect import detect, LangDetectException
+
+
 
 # Load model components 
 @st.cache_resource(show_spinner=False)
@@ -210,63 +213,83 @@ lyrics_input = st.text_area(
 )
 
 # Predict button
+# Predict button
 if st.button("Predict Vibe"):
-    if not lyrics_input.strip():
+    lyrics_input = lyrics_input.strip() 
+    MIN_WORDS = 20
+    word_count = len(lyrics_input.split())
+
+    if not lyrics_input:
         st.warning("Please enter some lyrics first!")
+    elif word_count < MIN_WORDS:
+        st.info(f"Please enter at least **{MIN_WORDS} words** for accurate emotion prediction.\n\n"
+                f"Current word count: **{word_count}**")
     else:
-        # Preprocess input
-        lyrics_clean = preprocess_text(lyrics_input)
-        vec = tfidf.transform([lyrics_clean])
-        
-        # Predict emotion
-        pred_labels = predict_emotion(lyrics_input)
-        dominant_emotion, dominant_prob = pred_labels[0]
+        # Language detection
+        try:
+            detected_lang = detect(lyrics_input)
+        except LangDetectException:
+            detected_lang = None
 
-        df = pd.DataFrame(pred_labels, columns=["Emotion", "Probability"])
-        df["Confidence (%)"] = df["Probability"] * 100
+        if detected_lang != "en":
+            st.warning("Moodify currently only supports English lyrics.")
+            st.stop()
 
-        emoji_map = {
-            "anger": "🔥",     
-            "fear": "🌑",      
-            "joy": "✨",        
-            "love": "❤️",       
-            "sadness": "🌧️", 
-            "surprise": "⚡"   
-        }
+        # ----------------------------
+        # Prediction
+        # ----------------------------
+        pred_labels = predict_emotion(lyrics_input, tfidf, clf, le, threshold=0.4)
+        dominant_emotion, dominant_prob = pred_labels[0]  # top predicted emotion
+        keywords = explain_prediction(lyrics_input, tfidf, clf, le, top_k=3)
 
+        # Display probabilities
+        emoji_map = {"anger":"🔥","fear":"🌑","joy":"✨","love":"❤️",
+                     "sadness":"🌧️","surprise":"⚡","Neutral":"😐"}
         for emotion, prob in pred_labels:
-            st.markdown(
-                f"""
+            st.markdown(f"""
                 <div style="font-size:22px; line-height:1.4;">
                     <strong>{emoji_map.get(emotion,'')} {emotion.capitalize()}</strong>
                     <span style="color:#6b5e4b; margin-left:10px;">
                         {prob*100:.1f}%
                     </span>
                 </div>
-                """,
-                unsafe_allow_html=True
+            """, unsafe_allow_html=True)
+            st.progress(int(prob*100))
+
+        # Display keywords
+        st.markdown("### 🔍 Why this vibe?")
+        if keywords:
+            pill_html = "".join(
+                f"<span style='display:inline-block;background:#d6bca8;color:#2b2b2b;"
+                f"padding:6px 14px;margin:4px;border-radius:999px;font-weight:700;font-size:14px;'>"
+                f"{word}</span>" for word in keywords
             )
+            st.markdown(pill_html, unsafe_allow_html=True)
+        else:
+            st.markdown("<i>No keywords could be highlighted for this input.</i>", unsafe_allow_html=True)
 
-            st.progress(int(prob * 100))
-
-        # Suggest top songs with same vibe
-        if len(songs_df) > 0:
-            matched_songs_df = songs_df[songs_df['emotion'] == dominant_emotion].copy()
-
-            if len(matched_songs_df) > 0:
-                input_vec = vec.toarray()[0]
-                
-                matched_songs_df['similarity'] = matched_songs_df['tfidf_vec'].apply(lambda x: cosine_similarity([input_vec], [x])[0][0])
-                
-                top_songs = matched_songs_df.sort_values(by='similarity', ascending=False).head(5)
-                
-                st.markdown(f"### 🎵 Top {len(top_songs)} **{dominant_emotion}** Songs:")
-                for _, row in top_songs.iterrows():
-                
-                    link_text = f"**{row['title']}** by *{row['artist']}*"
-                    st.markdown(f"{link_text} — [Listen Here]({row['link']})")
-            else:
-                st.info(f"No songs found in the database with the emotion: **{dominant_emotion}**.")
+        # ----------------------------
+        # Handle Neutral / Low Confidence
+        # ----------------------------
+        if dominant_emotion == "Neutral":
+            st.warning("Moodify is unsure about the vibe of these lyrics. "
+                       "Try providing longer or clearer lyrics for better results.")
+        else:
+            # Suggest songs only if confident
+            if len(songs_df) > 0:
+                matched_songs_df = songs_df[songs_df['emotion'] == dominant_emotion].copy()
+                if len(matched_songs_df) > 0:
+                    input_vec = tfidf.transform([preprocess_text(lyrics_input)]).toarray()[0]
+                    matched_songs_df['similarity'] = matched_songs_df['tfidf_vec'].apply(
+                        lambda x: cosine_similarity([input_vec],[x])[0][0]
+                    )
+                    top_songs = matched_songs_df.sort_values(by='similarity', ascending=False).head(5)
+                    st.markdown(f"### 🎵 Top {len(top_songs)} **{dominant_emotion}** Songs:")
+                    for _, row in top_songs.iterrows():
+                        link_text = f"**{row['title']}** by *{row['artist']}*"
+                        st.markdown(f"{link_text} — [Listen Here]({row.get('link','#')})")
+                else:
+                    st.info(f"No songs found in the database with the emotion: **{dominant_emotion}**.")
 
 st.markdown("---")
 st.markdown("Made with ❤️ — Moodify.")

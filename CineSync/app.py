@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import utils
+import uuid
+from utils import is_uplifting_review
 
 # Page configuration
 st.set_page_config(
@@ -45,7 +47,11 @@ def main():
     # Load Data
     data_path = 'data/movies_sample.csv'
     df = utils.load_data(data_path)
-
+    ratings_path = 'data/ratings_sample.csv'
+    ratings_df = pd.read_csv(ratings_path)
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+        
     if df is not None:
         # Preprocess and Compute Similarity Matrix
         # (In a real production app, you might cache this step or load a pre-computed model)
@@ -65,20 +71,66 @@ def main():
             help="Start typing to search for a movie in our database."
         )
 
+        is_host = st.checkbox(
+            "I am the host (controls play/pause)",
+            key="group_watch_host_checkbox"
+        )
+
+        room_id = st.text_input(
+            "Enter Group Watch Room ID",
+            help="Share this Room ID with friends to watch together"
+        )
+
+        # --- Sentiment filter (Issue #46) ---
+        uplifting_only = st.checkbox("😊 Show uplifting movies only")
+
+
+        # --- Collaborative Filtering Section ---
+        st.subheader("Personalized Recommendations (Collaborative Filtering)")
+
+        user_id = st.selectbox(
+            "Select User ID",
+            ratings_df['userId'].unique(),
+            help="Choose a user to get personalized recommendations"
+        )
+
         if st.button("Find Similar Movies"):
+            if room_id:
+                utils.emit_sync_event(
+                room_id=room_id,
+                user_id=st.session_state.session_id,
+                action="play",
+                timestamp=0
+                )
+                
             if selected_movie:
                 recommendations = utils.get_recommendations(selected_movie, df_processed, cosine_sim)
                 
                 if recommendations:
                     st.success(f"Movies similar to **{selected_movie}**:")
-                    
-                    # Display recommendations in a nice format
+
+                    filtered_recommendations = []
+
                     for movie in recommendations:
+                        row = df[df['title'] == movie].iloc[0]
+
+                        # Apply uplifting filter only if enabled AND review exists
+                        if uplifting_only and "review" in row:
+                            if not is_uplifting_review(row["review"]):
+                                continue
+
+                        filtered_recommendations.append(movie)
+
+                    # Display recommendations in a nice format
+                    for movie in filtered_recommendations:
                         # Find the row for this movie to get genre/plot if we wanted to display it
                         # For now, just the title as per MVP
                         row = df[df['title'] == movie].iloc[0]
                         genres = row['genres']
                         plot = row['plot']
+
+                        if uplifting_only and not utils.is_uplifting(plot):
+                            continue
                         
                         st.markdown(f"""
                         <div class="recommendation-card">
@@ -91,7 +143,21 @@ def main():
                     st.warning("No recommendations found. Try another movie!")
             else:
                 st.error("Please select a movie first.")
-                
+
+            # --- Collaborative Filtering Button ---
+            recs = None
+            if st.button("Get Personalized Recommendations"):
+                recs = utils.collaborative_recommendations(
+                ratings_df,
+                user_id=user_id,
+                top_n=5
+            )
+
+            if recs:
+                st.success("Recommended for you:")
+                for movie in recs:
+                    st.write("🎬", movie)
+             
         # Show dataset stats (optional, good for transparency)
         with st.expander("See Dataset used"):
             st.dataframe(df.style.highlight_max(axis=0))

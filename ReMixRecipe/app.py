@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from model import CuisinePredictor
 import os
+from model import clean_user_ingredients
+
 
 # Page Config
 st.set_page_config(
@@ -96,25 +98,37 @@ def main():
     if st.button("Find Cuisine"):
         if ingredients_input.strip():
             with st.spinner("Analyzing flavors..."):
-                try:
-                    # Get predictions
-                    predictions = predictor.predict(ingredients_input)
-                    
-                    if not predictions:
-                        st.warning("No clear match found! Try adding more ingredients.")
-                    else:
-                        st.markdown("<div class='result-card'>", unsafe_allow_html=True)
-                        st.subheader("🍽️ Recommended Cuisines")
-                        
-                        for cuisine, prob in predictions[:3]: # Show top 3
-                            confidence = int(prob * 100)
-                            st.write(f"**{cuisine.title()}** ({confidence}% match)")
-                            st.progress(min(int(prob * 100), 100))
-                        
-                        st.markdown("</div>", unsafe_allow_html=True)
+                 try:
+                      # ✅ Clean and correct ingredients using fuzzy matching
+                      corrected, ignored = clean_user_ingredients(ingredients_input)
+                      if ignored:
+                           st.warning(f"Ignored unknown ingredients: {', '.join(ignored)}")
+                      if not corrected:
+                           st.error("No valid ingredients detected after cleaning.")
+                           return
+                      st.success(f"Using ingredients: {', '.join(corrected)}")
+                      # ✅ Convert list back to string for model input
+                      cleaned_input = ", ".join(corrected)
+                      # ✅ Get predictions
+                      predictions = predictor.predict(cleaned_input)
+                      if not predictions:
+                           st.warning("No clear match found! Try adding more ingredients.")
+                      else:
+                           st.markdown("<div class='result-card'>", unsafe_allow_html=True)
+                           st.subheader("🍽️ Recommended Cuisines")
+                           for cuisine, prob in predictions[:3]:  # Show top 3
+                                confidence = int(prob * 100)
+                                st.write(f"**{cuisine.title()}** ({confidence}% match)")
+                                st.progress(min(confidence, 100))
+                           st.markdown("</div>", unsafe_allow_html=True)
 
-                except Exception as e:
+                 except Exception as e:
                     st.error(f"Something went wrong: {e}")
+
+                    
+                    
+                    
+    
         else:
             st.warning("Please enter some ingredients first!")
 
