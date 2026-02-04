@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 from model import CuisinePredictor
 import os
+from deep_translator import GoogleTranslator
+
+
+
 
 # Page Config
 st.set_page_config(
@@ -92,6 +96,12 @@ def main():
     st.markdown("---")
     ingredients_input = st.text_area("What's in your fridge? (comma separated)", 
                                      placeholder="e.g. tomato, cheese, basil, garlic")
+    
+    language = st.selectbox(
+    "Choose language",
+    ["English", "Hindi"]
+)
+
 
     if st.button("Find Cuisine"):
         if ingredients_input.strip():
@@ -104,11 +114,24 @@ def main():
                         st.warning("No clear match found! Try adding more ingredients.")
                     else:
                         st.markdown("<div class='result-card'>", unsafe_allow_html=True)
-                        st.subheader("🍽️ Recommended Cuisines")
+                        title_text = "🍽️ Recommended Cuisines"
+                        if language == "Hindi":
+                               title_text = GoogleTranslator(source='auto', target='hi').translate(title_text)
+                        st.subheader(title_text)
+
+
                         
                         for cuisine, prob in predictions[:3]: # Show top 3
                             confidence = int(prob * 100)
-                            st.write(f"**{cuisine.title()}** ({confidence}% match)")
+                            display_cuisine = cuisine.title()
+                            display_label = f"{confidence}% match"
+                            if language == "Hindi":
+                                  display_cuisine = GoogleTranslator(source='auto', target='hi').translate(display_cuisine)
+
+                                  display_label = GoogleTranslator(source='auto', target='hi').translate(display_label)
+
+                            st.write(f"**{display_cuisine}** ({display_label})")
+
                             st.progress(min(int(prob * 100), 100))
                         
                         st.markdown("</div>", unsafe_allow_html=True)
