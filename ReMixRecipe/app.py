@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 from model import CuisinePredictor, clean_user_ingredients, RecipeRecommender
 import os
+from deep_translator import GoogleTranslator
+
+
+
 
 # Page Config
 st.set_page_config(
@@ -86,13 +90,51 @@ def main():
 
     # Input Section
     st.markdown("---")
-    ingredients_input = st.text_area(
-        "What's in your fridge? (comma separated)", 
-        placeholder="e.g. tomato, cheese, basil, garlic"
-    )
+    ingredients_input = st.text_area("What's in your fridge? (comma separated)", 
+                                     placeholder="e.g. tomato, cheese, basil, garlic")
+    
+    language = st.selectbox(
+    "Choose language",
+    ["English", "Hindi"]
+)
+
 
     if st.button("Find Cuisine"):
-        if not ingredients_input.strip():
+        if ingredients_input.strip():
+            with st.spinner("Analyzing flavors..."):
+                try:
+                    # Get predictions
+                    predictions = predictor.predict(ingredients_input)
+                    
+                    if not predictions:
+                        st.warning("No clear match found! Try adding more ingredients.")
+                    else:
+                        st.markdown("<div class='result-card'>", unsafe_allow_html=True)
+                        title_text = "🍽️ Recommended Cuisines"
+                        if language == "Hindi":
+                               title_text = GoogleTranslator(source='auto', target='hi').translate(title_text)
+                        st.subheader(title_text)
+
+
+                        
+                        for cuisine, prob in predictions[:3]: # Show top 3
+                            confidence = int(prob * 100)
+                            display_cuisine = cuisine.title()
+                            display_label = f"{confidence}% match"
+                            if language == "Hindi":
+                                  display_cuisine = GoogleTranslator(source='auto', target='hi').translate(display_cuisine)
+
+                                  display_label = GoogleTranslator(source='auto', target='hi').translate(display_label)
+
+                            st.write(f"**{display_cuisine}** ({display_label})")
+
+                            st.progress(min(int(prob * 100), 100))
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                except Exception as e:
+                    st.error(f"Something went wrong: {e}")
+        else:
             st.warning("Please enter some ingredients first!")
             return
 

@@ -1,5 +1,4 @@
 pandas 
 scikit-learn
 transformers
-fuzzywuzzy
-python-Levenshtein
+deep-translator

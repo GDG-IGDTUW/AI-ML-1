@@ -59,6 +59,61 @@ This project comes with a small sample dataset (`data/movies_sample.csv`) contai
 3.  **Similarity**: It calculates **Cosine Similarity** between the selected movie and all others in the database.
 4.  **Ranking**: Movies with the highest similarity scores are recommended.
 
+## 🚀 Deploying CineSync on Heroku
+
+You can deploy CineSync as a live web application using **Heroku** in just a few steps.
+
+### Prerequisites
+- A GitHub account
+- A Heroku account (https://signup.heroku.com/)
+- Git installed on your system
+
+### Step 1: Fork the Repository
+Click the **Fork** button on GitHub to create your own copy of the repository.
+
+### Step 2: Clone Your Fork
+```bash
+git clone https://github.com/your-username/CineSync.git
+cd CineSync
+
+### Step 3: Create a Procfile
+
+Create a file named Procfile (no extension) in the project root:
+
+-> web: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
+
+### Step 4: Specify Python Version
+
+Create a file named runtime.txt:
+
+python-3.10.12
+
+### Step 5: Install Heroku CLI & Login
+
+Install the CLI from:
+https://devcenter.heroku.com/articles/heroku-cli
+
+Then login:
+
+heroku login
+
+### Step 6: Create a Heroku App
+heroku create cinesync-app
+
+### Step 7: Deploy to Heroku
+git push heroku main
+
+### Step 8: Open the App
+heroku open
+
+
+🎉 CineSync is now live on the web!
+
+### ⚠️ Deployment Note
+
+Heroku and Streamlit Cloud are recommended for deploying Streamlit apps.
+Platforms like Vercel do not natively support Streamlit applications.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:
