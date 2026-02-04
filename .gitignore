@@ -1,0 +1,8 @@
+# Python virtual environments
+venv/
+venv310/
+CineSync/venv310/
+
+# Python cache
+__pycache__/
+*.pyc

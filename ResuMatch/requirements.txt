@@ -1,6 +1,6 @@
 streamlit
-scikit-learn
-nltk
 PyPDF2
 python-docx
-
+scikit-learn
+nltk
+langdetect
