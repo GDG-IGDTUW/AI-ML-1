@@ -1,6 +1,16 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
+try:
+    from surprise import Dataset, Reader, SVD
+    SURPRISE_AVAILABLE = True
+except ImportError:
+    SURPRISE_AVAILABLE = False
+if SURPRISE_AVAILABLE:
+    from surprise.model_selection import train_test_split
+import asyncio
+import json
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 def load_data(filepath):
     """
@@ -108,3 +118,66 @@ def get_recommendations(title, df, cosine_sim, top_n=5):
     except KeyError:
         # Returned if the movie title is not found in the dataset
         return []
+
+def collaborative_recommendations(ratings_df, user_id, top_n=5):
+    """
+    Generate movie recommendations using collaborative filtering (SVD).
+    
+    ratings_df must have columns: userId, title, rating
+    """
+    reader = Reader(rating_scale=(1, 5))
+    data = Dataset.load_from_df(
+        ratings_df[['userId', 'title', 'rating']],
+        reader
+    )
+
+    trainset = data.build_full_trainset()
+    if not SURPRISE_AVAILABLE:
+        return []
+
+    algo = SVD()
+    algo.fit(trainset)
+
+    all_movies = ratings_df['title'].unique()
+    watched = ratings_df[ratings_df['userId'] == user_id]['title'].values
+
+    predictions = []
+    for movie in all_movies:
+        if movie not in watched:
+            pred = algo.predict(user_id, movie)
+            predictions.append((movie, pred.est))
+
+    predictions.sort(key=lambda x: x[1], reverse=True)
+    return [m[0] for m in predictions[:top_n]]
+
+def emit_sync_event(room_id, user_id, action, timestamp):
+    """
+    Emits a sync event (play, pause, seek) for group watch.
+    This is a placeholder for WebSocket / backend integration.
+    """
+
+    event = {
+        "room_id": room_id,
+        "user_id": user_id,
+        "action": action,
+        "timestamp": timestamp
+    }
+
+    # For now, we just print/log the event
+    # In real implementation, this will be sent via WebSocket server
+    print("SYNC EVENT:", json.dumps(event))
+
+# --- Sentiment utilities (Issue #46) ---
+
+_analyzer = SentimentIntensityAnalyzer()
+
+def is_uplifting_review(text, threshold=0.4):
+    """
+    Returns True if review sentiment is uplifting.
+    Uses VADER compound score.
+    """
+    if not isinstance(text, str) or not text.strip():
+        return False
+
+    score = _analyzer.polarity_scores(text)
+    return score["compound"] >= threshold

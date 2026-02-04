@@ -2,23 +2,55 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 
 def create_model(total_words, max_sequence_len):
     model = Sequential()
     model.add(Embedding(total_words, 100, input_length=max_sequence_len-1))
-    model.add(LSTM(150, return_sequences=True))
-    model.add(Dropout(0.2))
-    model.add(LSTM(100))
+    model.add(LSTM(128, return_sequences=True))  # reduced units
+    model.add(Dropout(0.3))                     # increased dropout
+    model.add(LSTM(64))                          # reduced units
+    model.add(Dropout(0.2))                     # optional extra dropout
     model.add(Dense(total_words, activation='softmax'))
     
     model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.01), metrics=['accuracy'])
     return model
 
-def train_model(model, predictors, label, epochs=50):
-    model.fit(predictors, label, epochs=epochs, verbose=1)
-    return model
+def train_model(model, predictors, label, epochs=50, validation_split=0.2, patience=5):
+    """
+    Trains the LSTM model with validation split and early stopping to reduce overfitting.
+    
+    Args:
+        model: Keras model to train.
+        predictors: Input sequences (X).
+        label: One-hot encoded labels (y).
+        epochs: Maximum number of epochs.
+        validation_split: Fraction of data to use as validation.
+        patience: Number of epochs with no improvement to stop training early.
+    
+    Returns:
+        Trained Keras model and training history.
+    """
+    
+    early_stop = EarlyStopping(
+        monitor='val_loss',        # monitor validation loss
+        patience=patience,         # stop after 'patience' epochs with no improvement
+        restore_best_weights=True  # restore best weights from training
+    )
+    
+    history = model.fit(
+        predictors,
+        label,
+        epochs=epochs,
+        validation_split=validation_split,
+        callbacks=[early_stop],
+        verbose=1
+    )
+    
+    return model, history
 
 def generate_text(seed_text, next_words, model, max_sequence_len, tokenizer):
     for _ in range(next_words):

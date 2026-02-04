@@ -1,0 +1,8 @@
+We are seeking a Machine Learning Engineer to develop and deploy scalable ML solutions.
+
+Requirements:
+- Strong proficiency in Python and machine learning frameworks
+- Experience with model training, evaluation, and deployment
+- Knowledge of deep learning techniques
+- Familiarity with data pipelines and SQL
+- Ability to collaborate with cross-functional teams

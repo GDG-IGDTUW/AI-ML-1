@@ -5,6 +5,7 @@ import os
 
 # Load the trained model
 MODEL_PATH = 'book_genre_model.pkl'
+CONFIDENCE_THRESHOLD = 0.40  # 40%
 
 @st.cache_resource
 def load_model():
@@ -14,6 +15,21 @@ def load_model():
         return None
 
 model = load_model()
+
+def log_low_confidence(title, predicted_genre, confidence):
+    log_data = pd.DataFrame([{
+        "Title": title,
+        "Predicted Genre": predicted_genre,
+        "Confidence": confidence
+    }])
+
+    log_file = "low_confidence_logs.csv"
+
+    if os.path.exists(log_file):
+        log_data.to_csv(log_file, mode='a', header=False, index=False)
+    else:
+        log_data.to_csv(log_file, index=False)
+
 
 def main():
     st.set_page_config(page_title="Mythos AI - Book Genre Predictor", page_icon="📚")
@@ -39,6 +55,9 @@ def main():
                 
                 # Get class labels
                 classes = model.classes_
+
+                max_prob = probabilities.max()
+                predicted_genre = classes[probabilities.argmax()]
                 
                 # Create a DataFrame for probabilities
                 prob_df = pd.DataFrame({
@@ -46,7 +65,20 @@ def main():
                     'Probability': probabilities
                 }).sort_values(by='Probability', ascending=False)
 
-                st.success(f"**Predicted Genre:** {prediction}")
+                st.success(f"**Predicted Genre:** {predicted_genre}")
+
+                if max_prob < CONFIDENCE_THRESHOLD:
+                    st.warning(
+                        "⚠️ **Low Confidence Prediction**\n\n"
+                        "The model is not very confident about this prediction. "
+                        "This may happen if the book title is short, ambiguous, or uncommon."
+                    )
+                    st.info(
+                        "ℹ️ **Why am I seeing this warning?**\n\n"
+                        "This model predicts genres based only on book titles. "
+                        "Some titles do not contain enough information to confidently determine a genre."
+                    )
+                    log_low_confidence(title_input, predicted_genre, max_prob)
                 
                 with st.expander("See Prediction Probabilities"):
                     st.dataframe(prob_df.style.format({'Probability': '{:.2%}'}))

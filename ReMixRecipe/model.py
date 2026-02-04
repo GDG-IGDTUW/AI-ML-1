@@ -1,7 +1,10 @@
+from fuzzywuzzy import process
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import re
 
 class CuisinePredictor:
@@ -79,3 +82,67 @@ class CuisinePredictor:
         # Return the top predictions (filter out very low probabilities if desired)
         # Here we return all that have at least some chance, or just top 5
         return [r for r in results if r[1] > 0.01]
+    
+def get_valid_ingredients():
+    df = pd.read_csv("data/recipes.csv")
+    ingredients = set()
+
+    for item in df["ingredients"]:
+        for ing in item.split(","):
+            ingredients.add(ing.strip().lower())
+
+    return list(ingredients)
+
+
+def correct_ingredient(word, valid_list):
+    match, score = process.extractOne(word, valid_list)
+
+    if score >= 80:   # threshold
+        return match
+    else:
+        return None
+
+
+def clean_user_ingredients(user_input):
+    valid_list = get_valid_ingredients()
+
+    raw_items = user_input.split(",")
+    corrected = []
+    ignored = []
+
+    for item in raw_items:
+        word = item.strip().lower()
+        corrected_word = correct_ingredient(word, valid_list)
+
+        if corrected_word:
+            corrected.append(corrected_word)
+        else:
+            ignored.append(word)
+
+    return corrected, ignored
+
+
+class RecipeRecommender:
+    def __init__(self, data_path="data/recipes.csv"):
+        self.df = pd.read_csv(data_path)
+        # Clean ingredients
+        self.df['ingredients_clean'] = self.df['ingredients'].apply(lambda x: x.lower())
+        # Initialize TF-IDF vectorizer
+        self.vectorizer = TfidfVectorizer(
+            tokenizer=lambda x: [i.strip() for i in x.split(',')], 
+            token_pattern=None
+        )
+        self.tfidf_matrix = self.vectorizer.fit_transform(self.df['ingredients_clean'])
+    
+    def recommend(self, user_ingredients, top_n=5):
+        if isinstance(user_ingredients, list):
+            user_input = ",".join(user_ingredients)
+        else:
+            user_input = user_ingredients
+        user_input = user_input.lower()
+        user_vec = self.vectorizer.transform([user_input])
+        similarities = cosine_similarity(user_vec, self.tfidf_matrix).flatten()
+        top_indices = similarities.argsort()[::-1][:top_n]
+        results = self.df.iloc[top_indices].copy()
+        results['score'] = similarities[top_indices]
+        return results[['cuisine', 'ingredients', 'score']]
