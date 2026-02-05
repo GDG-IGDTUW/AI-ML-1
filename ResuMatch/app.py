@@ -1,6 +1,13 @@
 import streamlit as st
-#modify import
-from utils import extract_text_from_pdf, extract_text_from_docx, clean_text, calculate_similarity, get_missing_keywords
+from utils import (
+    extract_text_from_pdf,
+    extract_text_from_docx,
+    clean_text,
+    calculate_similarity,
+    get_missing_keywords,
+    calculate_ats_score
+)
+
 from langdetect import detect
 
 
@@ -97,6 +104,8 @@ def main():
 
                 # 3. Calculate Similarity
                 match_percentage = calculate_similarity(cleaned_resume, cleaned_jd)
+
+                ats_score = calculate_ats_score(cleaned_resume, cleaned_jd)
                 
                 # 4. Find Missing Keywords
                 missing_keywords = get_missing_keywords(cleaned_resume, cleaned_jd)
@@ -118,6 +127,15 @@ def main():
                             </h1>
                         </div>
                     """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <h3>ATS Score</h3>
+                            <h1 style="color: {'#4CAF50' if ats_score >= 70 else '#FFC107' if ats_score >= 40 else '#F44336'};">
+                                {ats_score}%
+                            </h1>
+                        </div>
+                    """, unsafe_allow_html=True)
+
                     
                     if match_percentage >= 70:
                         st.success("Great match! Your resume aligns well with this job.")
