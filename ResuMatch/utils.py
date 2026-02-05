@@ -16,6 +16,54 @@ try:
 except LookupError:
     nltk.download('stopwords')
 
+def calculate_ats_score(resume_text, job_desc_text):
+    """
+    Simulates a realistic ATS scoring system.
+    Returns final ATS score (0-100).
+    """
+
+    if not resume_text or not job_desc_text:
+        return 0
+
+    resume_words = set(resume_text.split())
+    jd_words = set(job_desc_text.split())
+
+    # --- 1. Keyword Match (40%) ---
+    common_keywords = resume_words.intersection(jd_words)
+    keyword_score = (len(common_keywords) / len(jd_words)) * 40 if jd_words else 0
+
+    # --- 2. Skills Match (30%) ---
+    skills_list = [
+        "python", "java", "c++", "machine", "learning",
+        "sql", "excel", "react", "django", "flask",
+        "data", "analysis", "nlp", "deep", "tensorflow"
+    ]
+
+    skills_in_jd = [s for s in skills_list if s in jd_words]
+    skills_in_resume = [s for s in skills_list if s in resume_words]
+
+    if skills_in_jd:
+        skill_score = (len(skills_in_resume) / len(skills_in_jd)) * 30
+    else:
+        skill_score = 0
+
+    # --- 3. Experience / Education Signals (20%) ---
+    exp_words = ["experience", "year", "internship", "project", "bachelor", "master"]
+
+    exp_count = sum(1 for w in exp_words if w in resume_words)
+    exp_score = min(exp_count / len(exp_words), 1) * 20
+
+    # --- 4. Formatting / Sections (10%) ---
+    section_words = ["skills", "education", "project", "summary"]
+
+    section_count = sum(1 for w in section_words if w in resume_words)
+    format_score = min(section_count / len(section_words), 1) * 10
+
+    # --- Final ATS Score ---
+    ats_score = keyword_score + skill_score + exp_score + format_score
+
+    return round(ats_score, 2)
+
 def extract_text_from_docx(uploaded_file):
     doc = Document(uploaded_file)
     text = [para.text for para in doc.paragraphs]
