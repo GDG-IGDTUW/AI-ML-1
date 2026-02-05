@@ -119,6 +119,17 @@ def get_recommendations(title, df, cosine_sim, top_n=5):
         # Returned if the movie title is not found in the dataset
         return []
 
+def get_title_suggestions(query, titles, limit=5):
+    """
+    Returns movie title suggestions based on user input.
+    """
+    if not query:
+        return []
+
+    query = query.lower()
+    matches = [t for t in titles if query in t.lower()]
+    return matches[:limit]
+
 def collaborative_recommendations(ratings_df, user_id, top_n=5):
     """
     Generate movie recommendations using collaborative filtering (SVD).
