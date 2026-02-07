@@ -38,15 +38,40 @@ def main():
     st.markdown("""
     This app predicts the genre of a book based on its title using a Naive Bayes model trained on Amazon book data.
     """)
+    if model is not None:
+        st.success("✅ Model loaded successfully")
+
 
     if model is None:
-        st.error(f"Model file '{MODEL_PATH}' not found. Please run 'model_training.py' first.")
+        st.error("🚫 Model not found")
+
+        st.markdown("""
+    The genre prediction model is not available yet.
+
+    **Why am I seeing this?**
+    - The trained model file (`book_genre_model.pkl`) has not been generated
+    - or it is missing from the project directory
+
+    **How to fix this:**
+    1. Open your terminal
+    2. Navigate to the project folder
+    3. Run the training script:
+
+    ```bash
+    python model_training.py
+    ```
+
+    Once training is complete, restart this app.
+    """)
+
+        st.info("ℹ️ This step is required only once unless the model file is deleted.")
         return
+
 
     # User input
     title_input = st.text_input("Enter Book Title:", placeholder="e.g. Harry Potter and the Sorcerer's Stone")
 
-    if st.button("Predict Genre"):
+    if st.button("Predict Genre", disabled=(model is None)):
         if title_input.strip():
             # Predict
             try:
