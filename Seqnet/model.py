@@ -7,6 +7,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+def sample_with_temperature(preds, temperature=1.0):
+    preds = np.asarray(preds).astype('float64')
+    preds = np.log(preds + 1e-8) / temperature  # avoid log(0)
+    exp_preds = np.exp(preds)
+    preds = exp_preds / np.sum(exp_preds)
+    probas = np.random.multinomial(1, preds, 1)
+    return np.argmax(probas)
+
 def create_model(total_words, max_sequence_len):
     model = Sequential()
     model.add(Embedding(total_words, 100, input_length=max_sequence_len-1))
@@ -52,21 +60,39 @@ def train_model(model, predictors, label, epochs=50, validation_split=0.2, patie
     
     return model, history
 
-def generate_text(seed_text, next_words, model, max_sequence_len, tokenizer):
+def generate_text(seed_text, next_words, model, max_sequence_len, tokenizer, temperature=1.0, repetition_threshold=2):
+    recent_words = []
+
     for _ in range(next_words):
         token_list = tokenizer.texts_to_sequences([seed_text])[0]
-        token_list = tf.keras.preprocessing.sequence.pad_sequences([token_list], maxlen=max_sequence_len-1, padding='pre')
-        predicted_probs = model.predict(token_list, verbose=0)
-        predicted = np.argmax(predicted_probs, axis=-1)
-        
+        token_list = tf.keras.preprocessing.sequence.pad_sequences(
+            [token_list], maxlen=max_sequence_len-1, padding='pre'
+        )
+        predicted_probs = model.predict(token_list, verbose=0)[0]
+
+        # Penalize recently used words
+        for word_idx in recent_words:
+            if word_idx < len(predicted_probs):
+                predicted_probs[word_idx] *= 0.1  # reduce probability
+
+        predicted_index = sample_with_temperature(predicted_probs, temperature)
+
+        # Map index back to word
         output_word = ""
         for word, index in tokenizer.word_index.items():
-            if index == predicted:
+            if index == predicted_index:
                 output_word = word
                 break
-        
+
+        # Update recent words
+        recent_words.append(predicted_index)
+        if len(recent_words) > repetition_threshold:
+            recent_words.pop(0)
+
         seed_text += " " + output_word
+
     return seed_text.title()
+
 
 def save_model(model, path):
     model.save(path)
