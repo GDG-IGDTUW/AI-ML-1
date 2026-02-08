@@ -36,70 +36,104 @@ WELLBEING_EXERCISES = {
         "Write 3 quick things you're grateful for - 2 to 3 min",
         "Savor: close your eyes and notice details for 60s",
         "Do one tiny celebratory action (song, stretch, treat)",
+
         # New additions
-        "Create a 30-second 'joy snapshot': write what happened, where you were, and how you felt.",
+        "Create a 30-second joy snapshot: write what happened, where you were, and how you felt.",
         "Turn your happiness into motion — dance freely to one song.",
-        "Plan one small future treat that you can look forward to this week."
+        "Plan one small future treat you can look forward to this week.",
+
+        # More additions
+        "Smile intentionally for 20 seconds and notice any shift in mood.",
+        "Take a photo or mental picture to remember this joyful moment later.",
+        "Say out loud what made this moment meaningful to you.",
     ],
+
     "Sadness": [
         "Take a grounding walk for 6 to 10 minutes and notice senses",
         "Free-write for 10 minutes - no edits, just feelings",
         "Send a short note to a trusted person",
         "Try a soothing routine: warm drink + calming music for 10 to 15 min",
+
         # New additions
         "Name it to tame it: write one sentence starting with 'Right now I feel...' and why.",
         "5-4-3-2-1 grounding reset: name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste.",
-        "Self-compassion minute: place a hand on your chest, breathe slowly for 60 seconds, and say something kind to yourself."
+        "Self-compassion minute: place a hand on your chest, breathe slowly for 60 seconds, and say something kind to yourself.",
 
+        # More additions
+        "Lower the bar: choose one very small task you can finish in under 5 minutes.",
+        "Allow the feeling without fixing it for 2 minutes — just notice and breathe.",
+        "Wrap yourself in something warm and focus on physical comfort.",
     ],
+
     "Anger": [
         "Box breathing: 4s inhale, 4s hold, 4s exhale, 4s hold - 5 rounds",
         "Move vigorously for 3 minutes (marching, stairs)",
         "Write it out, then safely discard or delete",
         "Step away from the trigger for 10 minutes and breathe",
+
         # New additions
         "Write an uncensored rant for 2 minutes — do not reread it.",
         "Channel the energy into a fast cleaning or organizing burst (5 minutes).",
-        "Ask yourself: what boundary was crossed and how can I protect it next time?"
+        "Ask yourself: what boundary was crossed, and how can I protect it next time?",
 
-
+        # More additions
+        "Clench your fists tightly for 10 seconds, then release — repeat 3 times.",
+        "Lower your voice and slow your speech intentionally for one minute.",
+        "Imagine explaining your anger calmly to a neutral third party.",
     ],
+
     "Fear": [
         "5-4-3-2-1 grounding: identify senses in order",
         "Write one concrete 5-minute step you can do next",
         "Soothing breaths: inhale 4s, exhale 6s for 6 rounds",
         "Separate facts from worries - list what you know vs fear",
+
         # New additions
         "Recall a past moment when you handled something difficult successfully.",
         "Press your feet firmly into the floor and notice stability for 60 seconds.",
-        "Convert the fear into a question you can research or clarify."
+        "Turn the fear into a question you can research or clarify.",
 
-
+        # More additions
+        "Name the fear, then rate its intensity from 1–10.",
+        "Look around and identify three things that signal safety right now.",
+        "Remind yourself: this feeling is uncomfortable, not dangerous.",
     ],
+
     "Love": [
         "Send a short appreciative message to someone you care about",
         "Write 3 specific reasons you value this relationship",
         "Schedule a short call or shared micro-activity",
         "Express creatively: quick sketch, voice note or short poem",
+
         # New additions
         "Create a short appreciation list for someone without sending it — just reflect.",
         "Revisit a meaningful memory with someone you love and relive the details.",
-        "Offer help or support to someone today without being asked."
+        "Offer help or support to someone today without being asked.",
 
-
+        # More additions
+        "Tell someone exactly how they positively impact your life.",
+        "Do one small caring act for yourself as an expression of self-love.",
+        "Pause and feel gratitude for the ability to care deeply.",
     ],
+
     "Surprise": [
         "Pause and breathe for 30s, notice body sensations",
         "Journal 2 to 3 lines: pleasant or unsettling? why?",
         "If action needed, choose one tiny next move (2 min)",
         "If positive, share it; if unsettling, keep details to review later",
-        # New additions
-        "Ask: what did this moment teach me that I didn’t expect?",
-        "Notice how your assumptions were challenged by this event.",
-        "Describe the surprise using only three words."
 
+        # New additions
+        "Ask yourself: what did this moment teach me that I didn’t expect?",
+        "Notice how your assumptions were challenged by this event.",
+        "Describe the surprise using only three words.",
+
+        # More additions
+        "Check in with your body: where do you feel the surprise most?",
+        "Decide whether this surprise needs action now or later.",
+        "Reframe it as new information rather than good or bad.",
     ],
 }
+
 
 # ---------- STYLING ----------
 st.set_page_config(page_title="VibeLift — Unlocking the Invisible Influence of Emotion", layout="centered")
