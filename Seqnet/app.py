@@ -30,10 +30,30 @@ DATA_FILE = os.path.join(BASE_DIR, "data.txt")
 MODEL_FILE = os.path.join(BASE_DIR, "model.h5")
 TOKENIZER_FILE = os.path.join(BASE_DIR, "tokenizer.pickle")
 
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+def read_uploaded_file(file):
+    if file.size > MAX_FILE_SIZE:
+        st.error("File size exceeds 10MB limit.")
+        return None
+    try:
+        return file.read().decode("utf-8")
+    except UnicodeDecodeError:
+        st.error("File must be UTF-8 encoded.")
+        return None
+
+
 # Sidebar for controls
 st.sidebar.header("Settings")
 next_words = st.sidebar.slider("Number of words to generate", 1, 50, 5)
 train_epochs = st.sidebar.number_input("Training Epochs", min_value=1, value=50)
+
+st.sidebar.subheader("Dataset")
+uploaded_file = st.sidebar.file_uploader(
+    "Upload training data (.txt)",
+    type=["txt"]
+)
+
 
 @st.cache_resource
 def load_resources_v2():
@@ -57,14 +77,42 @@ if not tokenizer or not model:
 
 if not tokenizer or not model:
     st.warning("Model not found or needs training.")
+
     if st.button("Train Model"):
         with st.spinner("Training model... This may take a while based on data size and epochs."):
-            text = u.load_data(DATA_FILE)
+
+            # Load dataset (uploaded or default)
+            if uploaded_file:
+                text = read_uploaded_file(uploaded_file)
+            else:
+                text = u.load_data(DATA_FILE)
+
+            if not text:
+                st.stop()
+
+            # Compute and display dataset statistics
+            stats = u.compute_dataset_stats(text)
+
+            st.sidebar.markdown("### Dataset Statistics")
+            st.sidebar.write(f"Lines: {stats['lines']}")
+            st.sidebar.write(f"Characters: {stats['characters']}")
+            st.sidebar.write(f"Avg line length: {stats['avg_line_length']:.2f}")
+
+            # Store dataset metadata
+            u.save_dataset_metadata({
+            "filename": uploaded_file.name if uploaded_file else "data.txt",
+            "size_bytes": len(text.encode("utf-8")),
+            "encoding": "utf-8",
+            "stats": stats
+            })
+
+
+            # Create tokenizer and training sequences
             tokenizer = u.create_tokenizer(text)
-            predictors, label, max_sequence_len = u.create_sequences(tokenizer, text, 0) # Max len calc inside
+            predictors, label, max_sequence_len = u.create_sequences(
+                tokenizer, text, 0
+            )
             
-            # Recalculate max_sequence_len properly
-            max_sequence_len = predictors.shape[1] + 1
             total_words = len(tokenizer.word_index) + 1
             
             model = m.create_model(total_words, max_sequence_len)
