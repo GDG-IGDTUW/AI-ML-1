@@ -362,18 +362,20 @@ if detect_button:
                     raw_pred = clf.predict(X)[0] 
                     proba = float(clf.predict_proba(X).max())
                     
-                    # Capitalize prediction to match EMOJI_MAP keys
-                    pred = raw_pred.capitalize() 
+                    CONFIDENCE_THRESHOLD = 0.40
+                    if proba < CONFIDENCE_THRESHOLD:
+                        pred = "Neutral"
+                    else:
+                        pred = raw_pred.capitalize()
 
             except Exception as e:
                 st.error(f"Prediction failed! The model is incompatible or corrupt. Error: {e}")
 
         # Update Session State for Display
-        if pred in EMOJI_MAP:
+        if pred in EMOJI_MAP or pred == "Neutral":
             st.session_state['final_pred'] = pred
         else:
             st.session_state['final_pred'] = "Unknown"
-        st.session_state['proba'] = proba
 
 if reset_button:
     st.session_state['detect_clicked'] = False
@@ -387,6 +389,10 @@ if st.session_state['detect_clicked'] and st.session_state['final_pred'] is not 
     final_pred = st.session_state['final_pred']
     proba = st.session_state['proba']
     emoji = EMOJI_MAP.get(final_pred, "🧠")
+    if final_pred == "Neutral":
+        st.info("I'm sensing a neutral vibe. Could you describe your feelings in more detail?")
+        st.stop()
+
 
     st.markdown("---")
     st.markdown(
