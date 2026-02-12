@@ -9,6 +9,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pdfplumber
 from io import BytesIO
+import os
+from mistralai import Mistral
+
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 # Download stopwords if not already present
 try:
@@ -122,3 +129,63 @@ def get_missing_keywords(resume_text, job_desc_text, top_n=10):
     missing_keywords = [word for word in feature_names if word not in resume_words]
             
     return missing_keywords
+
+def generate_cover_letter_llm(resume_text, job_desc_text, tone):
+    """
+    Generates a personalized cover letter using Mistral LLM.
+    Uses original resume and job description text.
+    Tone is user-controlled .
+    Automatically adapts to detected language.
+    """
+
+    # Basic validation like other functions
+    if not resume_text or not job_desc_text:
+        return "Insufficient information to generate cover letter."
+
+    api_key = os.getenv("MISTRAL_API_KEY")
+
+    if not api_key:
+        return "Mistral API key not found. Please set MISTRAL_API_KEY environment variable."
+
+    try:
+        client = Mistral(api_key=api_key)
+
+        prompt = f"""
+You are a professional HR assistant.
+
+Detect the language of the resume and job description.
+Write the cover letter in the SAME language.
+Write a COMPLETE personalized cover letter.
+Use the resume content to infer skills and experience.
+Write full paragraphs, not a template.
+write the letter in tone provided by user.
+
+Guidelines:
+- Tone: {tone}
+- Length: 300-400 words
+- Avoid repetition
+- Highlight matching skills
+- Keep professional structure
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_desc_text}
+"""
+        response = client.chat.complete(
+            model="mistral-small-latest",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        return response.choices[0].message.content.strip()
+
+        
+
+    except Exception as e:
+        return f"Error generating cover letter: {str(e)}"

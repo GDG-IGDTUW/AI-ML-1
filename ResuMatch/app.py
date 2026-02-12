@@ -1,6 +1,6 @@
 import streamlit as st
 #modify import
-from utils import extract_text_from_pdf, extract_text_from_docx, clean_text, calculate_similarity, get_missing_keywords
+from utils import extract_text_from_pdf, extract_text_from_docx, clean_text, calculate_similarity, get_missing_keywords, generate_cover_letter_llm
 from langdetect import detect
 
 
@@ -40,6 +40,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
+    if "tone_option" not in st.session_state:
+        st.session_state.tone_option = None
     st.title("📄 ResuMatch")
     st.subheader("Smart Resume to Job Description Matcher")
     st.markdown("Upload your resume and paste a job description to see how well you match!")
@@ -66,6 +68,8 @@ def main():
     with col2:
         st.info("Step 2: Job Description")
         job_description = st.text_area("Paste the Job Description here", height=200)
+    
+    
 
     # Analysis Button
     if st.button("Analyze Resume"):
@@ -94,6 +98,9 @@ def main():
                 # 2. Preprocess Texts
                 cleaned_resume = clean_text(resume_text)
                 cleaned_jd = clean_text(job_description)
+                st.session_state.resume_text = resume_text
+                st.session_state.job_description = job_description
+
 
                 # 3. Calculate Similarity
                 match_percentage = calculate_similarity(cleaned_resume, cleaned_jd)
@@ -142,9 +149,45 @@ def main():
                     st.write(cleaned_resume[:500] + "...")
                     st.write("**Processed JD Text:**")
                     st.write(cleaned_jd[:500] + "...")
+                
+                
+                       
 
         else:
             st.warning("Please upload a resume and paste a job description to proceed.")
+
+    if "resume_text" in st.session_state and "job_description" in st.session_state:
+        st.info("Step 3: Choose Tone for Cover Letter")
+        tone_option = st.selectbox(
+            "Select Tone",
+            ["Formal", "Friendly", "Confident", "Creative"]
+        )
+        st.session_state.tone_option = tone_option
+        st.markdown("---")
+        st.header("🤖 Cover Letter Generator")
+        if st.session_state.tone_option is None:
+            st.warning("Please select a tone after analysis.")
+            return
+
+        final_tone = st.session_state.tone_option.lower()
+
+        if st.button("Generate  Cover Letter "):
+            with st.spinner("Generating cover letter using AI..."):
+                cover_letter = generate_cover_letter_llm(
+                st.session_state.resume_text,
+                st.session_state.job_description,
+                final_tone
+            )
+
+            if "Error" in cover_letter or "API key" in cover_letter:
+                st.error(cover_letter)
+            else:
+                st.text_area(
+                    "Your AI Generated Cover Letter",
+                    cover_letter,
+                    height=300
+                )
+        
 
 if __name__ == "__main__":
     main()
