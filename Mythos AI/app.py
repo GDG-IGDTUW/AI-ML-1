@@ -3,18 +3,26 @@ import joblib
 import pandas as pd
 import os
 
+# Set page config **first thing**
+st.set_page_config(page_title="Mythos AI - Book Genre Predictor", page_icon="📚")
+
 # Load the trained model
 MODEL_PATH = 'book_genre_model.pkl'
 CONFIDENCE_THRESHOLD = 0.40  # 40%
 
-@st.cache_resource
+@st.cache_resource(show_spinner=True)
 def load_model():
     if os.path.exists(MODEL_PATH):
         return joblib.load(MODEL_PATH)
-    else:
-        return None
+    return None
 
 model = load_model()
+
+def predict_title(model, title):
+    prediction = model.predict([title])[0]
+    probabilities = model.predict_proba([title])[0]
+    return prediction, probabilities
+
 
 def log_low_confidence(title, predicted_genre, confidence):
     log_data = pd.DataFrame([{
@@ -32,7 +40,6 @@ def log_low_confidence(title, predicted_genre, confidence):
 
 
 def main():
-    st.set_page_config(page_title="Mythos AI - Book Genre Predictor", page_icon="📚")
 
     st.title("Book Genre Predictor")
     st.markdown("""
@@ -75,8 +82,7 @@ def main():
         if title_input.strip():
             # Predict
             try:
-                prediction = model.predict([title_input])[0]
-                probabilities = model.predict_proba([title_input])[0]
+                prediction, probabilities = predict_title(model, title_input)
                 
                 # Get class labels
                 classes = model.classes_
@@ -85,6 +91,7 @@ def main():
                 predicted_genre = classes[probabilities.argmax()]
                 
                 # Create a DataFrame for probabilities
+
                 prob_df = pd.DataFrame({
                     'Genre': classes,
                     'Probability': probabilities
