@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 
 # ---------- CONFIG ----------
 MODEL_PKL = "emotion_model.pkl"
@@ -264,7 +264,21 @@ def ensure_nltk_stopwords():
     return s
 
 STOP_WORDS = ensure_nltk_stopwords()
-PS = PorterStemmer()
+lemmatizer = WordNetLemmatizer()
+def ensure_nltk():
+    try:
+        nltk.data.find("corpora/stopwords")
+    except Exception:
+        nltk.download("stopwords", quiet=True)
+    try:
+        nltk.data.find("corpora/wordnet")
+    except Exception:
+        nltk.download("wordnet", quiet=True)
+    try:
+        nltk.data.find("corpora/omw-1.4")
+        
+    except Exception:
+        nltk.download("omw-1.4", quiet=True)
 
 def clean_text(text: str) -> str:
     if not isinstance(text, str):
@@ -273,6 +287,17 @@ def clean_text(text: str) -> str:
     toks = text.lower().split()
     toks = [PS.stem(w) for w in toks if w not in STOP_WORDS]
     return " ".join(toks)
+
+def clean_text(txt):
+    ensure_nltk()
+    stop = set(stopwords.words("english"))
+    if "not" in stop:
+        stop.remove("not")
+    lemmatizer = WordNetLemmatizer()
+    txt = re.sub(r"[^a-zA-Z]", " ", str(txt))
+    tokens = txt.lower().split()
+    tokens = [lemmatizer.lemmatize(w, pos='v') for w in tokens if w not in stop]
+    return " ".join(tokens)
 
 @st.cache_resource
 def load_model(pkl_path: str):
