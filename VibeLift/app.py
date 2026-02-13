@@ -275,8 +275,7 @@ def ensure_nltk():
     except Exception:
         nltk.download("wordnet", quiet=True)
     try:
-        nltk.data.find("corpora/omw-1.4")
-        
+        nltk.data.find("corpora/omw-1.4")   
     except Exception:
         nltk.download("omw-1.4", quiet=True)
 
