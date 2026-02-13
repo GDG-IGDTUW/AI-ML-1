@@ -21,7 +21,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report, accuracy_score
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 
 # ---------- DEFAULT CONFIG ----------
 CSV_PATH_DEFAULT = "combined_emotion.csv"
@@ -37,13 +37,23 @@ def ensure_nltk():
     except Exception:
         print("Downloading NLTK stopwords...")
         nltk.download("stopwords")
+    try:
+        nltk.data.find("corpora/wordnet")
+    except Exception:
+        print("Downloading NLTK wordnet...")
+        nltk.download("wordnet")
+    try:
+        nltk.data.find("corpora/omw-1.4")
+    except Exception:
+        print("Downloading NLTK omw-1.4...")
+        nltk.download("omw-1.4")
 
-def clean_text(text: str, ps: PorterStemmer, stop_words:set) -> str:
+def clean_text(text: str, lemmatizer: WordNetLemmatizer, stop_words:set) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[^a-zA-Z]", " ", text)
     tokens = text.lower().split()
-    tokens = [ps.stem(w) for w in tokens if w not in stop_words]
+    tokens = [lemmatizer.lemmatize(w, pos='v') for w in tokens if w not in stop_words]
     return " ".join(tokens)
 
 def main(csv_path: str, out_pkl: str, max_features: int):
@@ -52,7 +62,7 @@ def main(csv_path: str, out_pkl: str, max_features: int):
     # keep behavior same as original: remove "not" from stopwords if present
     if "not" in stop_words:
         stop_words.remove("not")
-    ps = PorterStemmer()
+    lemmatizer = WordNetLemmatizer()
 
     csv_file = Path(csv_path)
     if not csv_file.exists():
@@ -82,7 +92,7 @@ def main(csv_path: str, out_pkl: str, max_features: int):
     # Cleaning
     print("Cleaning text...")
     t0 = time()
-    df["clean"] = df["sentence"].map(lambda s: clean_text(s, ps, stop_words))
+    df["clean"] = df["sentence"].map(lambda s: clean_text(s, lemmatizer, stop_words))
     print(f"Cleaning done in {time()-t0:.1f} s")
 
     # Vectorize
@@ -116,7 +126,7 @@ def main(csv_path: str, out_pkl: str, max_features: int):
 
     # Sanity test
     sample_text = "I feel great and happy today!"
-    sample_clean = clean_text(sample_text, ps, stop_words)
+    sample_clean = clean_text(sample_text, lemmatizer, stop_words)
     sample_vec = vect.transform([sample_clean])
     pred = clf.predict(sample_vec)[0]
     proba = clf.predict_proba(sample_vec).max()
