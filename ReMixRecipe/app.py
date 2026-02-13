@@ -68,9 +68,9 @@ def load_model():
     return predictor
 
 @st.cache_resource
-def load_recommender():
+def load_recommender(vegan=False, gluten_free=False):
     data_path = os.path.join(os.path.dirname(__file__), 'data', 'recipes.csv')
-    return RecipeRecommender(data_path=data_path)
+    return RecipeRecommender(data_path=data_path, vegan=vegan, gluten_free=gluten_free)
 
 # -----------------------------
 # Main Application
@@ -80,18 +80,23 @@ def main():
     st.markdown("### Turn your leftovers into a masterpiece!")
     st.markdown("Enter the ingredients you have, and our AI will guess the best cuisine for you.")
 
-    # Load models
-    try:
-        predictor = load_model()
-        recommender = load_recommender()
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        return
-
     # Input Section
     st.markdown("---")
     ingredients_input = st.text_area("What's in your fridge? (comma separated)", 
                                      placeholder="e.g. tomato, cheese, basil, garlic")
+    
+    vegan_only = st.checkbox("🌱 Vegan recipes only")
+    gluten_free_only = st.checkbox("🚫 Gluten-free recipes only")
+
+        # Load models
+    try:
+        predictor = load_model()
+        recommender = load_recommender(vegan_only, gluten_free_only)
+
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return
+
     
     language = st.selectbox(
     "Choose language",

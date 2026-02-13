@@ -7,6 +7,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 
+VEGAN_EXCLUDE = ["chicken", "egg", "milk", "cheese", "butter", "beef", "fish", "yogurt"]
+GLUTEN_EXCLUDE = ["wheat", "flour", "bread", "pasta", "noodle", "barley", "rye"]
+
+
 class CuisinePredictor:
     def __init__(self):
         self.pipeline = None
@@ -121,18 +125,31 @@ def clean_user_ingredients(user_input):
 
     return corrected, ignored
 
-
 class RecipeRecommender:
-    def __init__(self, data_path="data/recipes.csv"):
-        self.df = pd.read_csv(data_path)
+    def __init__(self, data_path="data/recipes.csv", vegan=False, gluten_free=False):
+        df = pd.read_csv(data_path)
+
         # Clean ingredients
-        self.df['ingredients_clean'] = self.df['ingredients'].apply(lambda x: x.lower())
-        # Initialize TF-IDF vectorizer
+        df['ingredients_clean'] = df['ingredients'].str.lower()
+
+        # Apply dietary filters
+        if vegan:
+            df = df[~df['ingredients_clean'].str.contains("|".join(VEGAN_EXCLUDE))]
+
+        if gluten_free:
+            df = df[~df['ingredients_clean'].str.contains("|".join(GLUTEN_EXCLUDE))]
+
+        # Reset index after filtering
+        self.df = df.reset_index(drop=True)
+
+        # Retrain TF-IDF on filtered data
         self.vectorizer = TfidfVectorizer(
-            tokenizer=lambda x: [i.strip() for i in x.split(',')], 
+            tokenizer=lambda x: [i.strip() for i in x.split(',')],
             token_pattern=None
         )
+
         self.tfidf_matrix = self.vectorizer.fit_transform(self.df['ingredients_clean'])
+
     
     def recommend(self, user_ingredients, top_n=5):
         if isinstance(user_ingredients, list):
