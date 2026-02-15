@@ -1,4 +1,7 @@
-pandas 
+streamlit
+pandas
+fuzzywuzzy
+python-Levenshtein 
 scikit-learn
 transformers
 deep-translator
