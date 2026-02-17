@@ -12,6 +12,7 @@ from langdetect import detect
 from PyPDF2 import PdfReader
 from docx import Document
 
+
 def safe_extract_text_from_pdf(file):
     try:
         pdf = PdfReader(file)
