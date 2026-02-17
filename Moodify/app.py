@@ -235,6 +235,18 @@ if st.button("Predict Vibe"):
             st.warning("Moodify currently only supports English lyrics.")
             st.stop()
 
+        # Wrap the prediction and recommendation logic in spinner
+        with st.spinner('Analyzing the vibe...'):
+            # ----------------------------
+            # Prediction
+            # ----------------------------
+            pred_labels = predict_emotion(lyrics_input, tfidf, clf, le, threshold=0.4)
+            dominant_emotion, dominant_prob = pred_labels[0]
+            keywords = explain_prediction(lyrics_input, tfidf, clf, le, top_k=3)
+
+        # Display results (outside spinner so they appear immediately after)
+        emoji_map = {"anger":"🔥","fear":"🌑","joy":"✨","love":"❤️",
+                     "sadness":"🌧️","surprise":"⚡","Neutral":"😐"}
         # ----------------------------
         # Prediction
         # ----------------------------
