@@ -4,7 +4,7 @@ train_model.py
 
 - Trains a MultinomialNB on combined_emotion.csv (with cleaning + stemming).
 - Saves ONE pickle file:
-    - emotion_model.pkl   (dict: {"model": MultinomialNB, "vectorizer": CountVectorizer})
+    - emotion_model.pkl   (dict: {"model": MultinomialNB, "vectorizer": TfidfVectorizer})
 - Usage: python train_model.py --csv /path/to/combined_emotion.csv
 """
 
@@ -15,7 +15,7 @@ from pathlib import Path
 from time import time
 
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report, accuracy_score
@@ -96,8 +96,8 @@ def main(csv_path: str, out_pkl: str, max_features: int):
     print(f"Cleaning done in {time()-t0:.1f} s")
 
     # Vectorize
-    print(f"Fitting CountVectorizer(max_features={max_features})...")
-    vect = CountVectorizer(max_features=max_features)
+    print(f"Fitting TfidfVectorizer(max_features={max_features}, ngram_range=(1, 2))...")
+    vect = TfidfVectorizer(max_features=max_features, ngram_range=(1, 2))
     X = vect.fit_transform(df["clean"].values)
     y = df["emotion"].values
     print("Vectorized shape:", X.shape)
@@ -136,6 +136,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--csv", default=CSV_PATH_DEFAULT, help="Path to combined_emotion.csv")
     p.add_argument("--out", default=OUTPUT_PKL, help="Output combined pickle filename")
-    p.add_argument("--features", type=int, default=MAX_FEATURES, help="CountVectorizer max_features")
+    p.add_argument("--features", type=int, default=MAX_FEATURES, help="TfidfVectorizer max_features")
     args = p.parse_args()
     main(args.csv, args.out, args.features)
