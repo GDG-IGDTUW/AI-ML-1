@@ -1,7 +1,35 @@
 import streamlit as st
-#modify import
-from utils import extract_text_from_pdf, extract_text_from_docx, clean_text, calculate_similarity, get_missing_keywords, generate_cover_letter_llm
-from langdetect import detect
+from utils import (
+    extract_text_from_pdf,
+    extract_text_from_docx,
+    clean_text,
+    calculate_similarity,
+    get_missing_keywords,
+    calculate_ats_score,
+    generate_cover_letter_llm,
+    detect,
+)
+from PyPDF2 import PdfReader
+from docx import Document
+
+
+def safe_extract_text_from_pdf(file):
+    try:
+        pdf = PdfReader(file)
+        text = ""
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+        return text
+    except:
+        return ""
+
+def safe_extract_text_from_docx(file):
+    try:
+        doc = Document(file)
+        text = "\n".join([p.text for p in doc.paragraphs])
+        return text
+    except:
+        return ""
 
 
 # Set page configuration
@@ -52,17 +80,24 @@ def main():
     with col1:
         st.info("Step 1: Upload Resume")
 
-        # Update uploader UI
+        MAX_FILE_SIZE_MB = 5  # 5MB limit
+
         uploaded_file = st.file_uploader(
             "📂 Drag & Drop your Resume here (PDF or DOCX)",
             type=["pdf", "docx"],
             help="You can drag and drop your resume file or browse from your computer."
-            )
-        
-        #Show file info preview
+        )
+
+        st.caption("⚠️ Maximum file size allowed: 5 MB")
+
         if uploaded_file:
-            st.success(f"Uploaded: {uploaded_file.name}")
-            st.caption(f"File type: {uploaded_file.type}")
+            file_size_mb = uploaded_file.size / (1024 * 1024)
+            if file_size_mb > MAX_FILE_SIZE_MB:
+                st.error(f"File too large! Please upload a file smaller than {MAX_FILE_SIZE_MB}MB.")
+                uploaded_file = None
+            else:
+                st.success(f"Uploaded: {uploaded_file.name} ({file_size_mb:.2f} MB)")
+                st.caption(f"File type: {uploaded_file.type}")
 
 
     with col2:
@@ -77,9 +112,9 @@ def main():
             with st.spinner("Analyzing..."):
                 # 1. Extract Text from PDF
                 if uploaded_file.name.endswith(".pdf"):
-                     resume_text = extract_text_from_pdf(uploaded_file)
+                     resume_text = safe_extract_text_from_pdf(uploaded_file)
                 elif uploaded_file.name.endswith(".docx"):
-                     resume_text = extract_text_from_docx(uploaded_file)
+                     resume_text = safe_extract_text_from_docx(uploaded_file)
                 else:
                      st.error("Unsupported file format.")
                      return
@@ -104,6 +139,8 @@ def main():
 
                 # 3. Calculate Similarity
                 match_percentage = calculate_similarity(cleaned_resume, cleaned_jd)
+
+                ats_score = calculate_ats_score(cleaned_resume, cleaned_jd)
                 
                 # 4. Find Missing Keywords
                 missing_keywords = get_missing_keywords(cleaned_resume, cleaned_jd)
@@ -125,6 +162,15 @@ def main():
                             </h1>
                         </div>
                     """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <h3>ATS Score</h3>
+                            <h1 style="color: {'#4CAF50' if ats_score >= 70 else '#FFC107' if ats_score >= 40 else '#F44336'};">
+                                {ats_score}%
+                            </h1>
+                        </div>
+                    """, unsafe_allow_html=True)
+
                     
                     if match_percentage >= 70:
                         st.success("Great match! Your resume aligns well with this job.")

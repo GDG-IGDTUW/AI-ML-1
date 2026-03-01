@@ -51,6 +51,15 @@ def main():
     ratings_df = pd.read_csv(ratings_path)
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())
+
+    if "last_input_time" not in st.session_state:
+            st.session_state.last_input_time = 0
+
+    if "search_query" not in st.session_state:
+         st.session_state.search_query = ""
+
+    if "selected_movie" not in st.session_state:
+         st.session_state.selected_movie = ""
         
     if df is not None:
         # Preprocess and Compute Similarity Matrix
@@ -61,16 +70,39 @@ def main():
         # User Input
         # Create a list of titles for the selectbox/autocomplete experience
         movie_titles = df_processed['title'].tolist()
-        
+
+        import time
+
+        query = st.text_input(
+            "Search for a movie",
+            value=st.session_state.search_query,
+            placeholder="Start typing a movie name..."
+        )
+
+        current_time = time.time()
+
+         # Update search query and timestamp
+        if query != st.session_state.search_query:
+             st.session_state.search_query = query
+             st.session_state.last_input_time = current_time
+
+         # Debounce delay (300ms)
+        suggestions = utils.get_title_suggestions(
+            st.session_state.search_query,
+            movie_titles
+        )
+
+
+        if suggestions:
+             st.markdown("**Suggestions:**")
+             for title in suggestions:
+                 if st.button(title, key=f"suggestion-{title}"):
+                     st.session_state.selected_movie = title
+
         # We use a selectbox here for better UX (prevents typos), 
         # but the requirements asked for "Users type in a movie". 
         # A selectbox with search capabilities is the best of both worlds.
-        selected_movie = st.selectbox(
-            "Select or type a movie name:",
-            options=[""] + movie_titles, # Add empty option at start
-            help="Start typing to search for a movie in our database."
-        )
-
+        
         is_host = st.checkbox(
             "I am the host (controls play/pause)",
             key="group_watch_host_checkbox"
@@ -103,11 +135,19 @@ def main():
                 timestamp=0
                 )
                 
-            if selected_movie:
-                recommendations = utils.get_recommendations(selected_movie, df_processed, cosine_sim)
-                
+            if (
+                st.session_state.selected_movie
+                and time.time() - st.session_state.last_input_time > 0.3
+        ):
+                recommendations = utils.get_recommendations(
+                         st.session_state.selected_movie,
+                         df_processed,
+                         cosine_sim
+                     )
                 if recommendations:
-                    st.success(f"Movies similar to **{selected_movie}**:")
+                    st.success(
+                         f"Movies similar to **{st.session_state.selected_movie}**:"
+                     )
 
                     filtered_recommendations = []
 

@@ -4,7 +4,7 @@ train_model.py
 
 - Trains a MultinomialNB on combined_emotion.csv (with cleaning + stemming).
 - Saves ONE pickle file:
-    - emotion_model.pkl   (dict: {"model": MultinomialNB, "vectorizer": CountVectorizer})
+    - emotion_model.pkl   (dict: {"model": MultinomialNB, "vectorizer": TfidfVectorizer})
 - Usage: python train_model.py --csv /path/to/combined_emotion.csv
 """
 
@@ -15,13 +15,13 @@ from pathlib import Path
 from time import time
 
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report, accuracy_score
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 
 # ---------- DEFAULT CONFIG ----------
 CSV_PATH_DEFAULT = "combined_emotion.csv"
@@ -37,13 +37,23 @@ def ensure_nltk():
     except Exception:
         print("Downloading NLTK stopwords...")
         nltk.download("stopwords")
+    try:
+        nltk.data.find("corpora/wordnet")
+    except Exception:
+        print("Downloading NLTK wordnet...")
+        nltk.download("wordnet")
+    try:
+        nltk.data.find("corpora/omw-1.4")
+    except Exception:
+        print("Downloading NLTK omw-1.4...")
+        nltk.download("omw-1.4")
 
-def clean_text(text: str, ps: PorterStemmer, stop_words:set) -> str:
+def clean_text(text: str, lemmatizer: WordNetLemmatizer, stop_words:set) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[^a-zA-Z]", " ", text)
     tokens = text.lower().split()
-    tokens = [ps.stem(w) for w in tokens if w not in stop_words]
+    tokens = [lemmatizer.lemmatize(w, pos='v') for w in tokens if w not in stop_words]
     return " ".join(tokens)
 
 def main(csv_path: str, out_pkl: str, max_features: int):
@@ -52,7 +62,7 @@ def main(csv_path: str, out_pkl: str, max_features: int):
     # keep behavior same as original: remove "not" from stopwords if present
     if "not" in stop_words:
         stop_words.remove("not")
-    ps = PorterStemmer()
+    lemmatizer = WordNetLemmatizer()
 
     csv_file = Path(csv_path)
     if not csv_file.exists():
@@ -82,12 +92,12 @@ def main(csv_path: str, out_pkl: str, max_features: int):
     # Cleaning
     print("Cleaning text...")
     t0 = time()
-    df["clean"] = df["sentence"].map(lambda s: clean_text(s, ps, stop_words))
+    df["clean"] = df["sentence"].map(lambda s: clean_text(s, lemmatizer, stop_words))
     print(f"Cleaning done in {time()-t0:.1f} s")
 
     # Vectorize
-    print(f"Fitting CountVectorizer(max_features={max_features})...")
-    vect = CountVectorizer(max_features=max_features)
+    print(f"Fitting TfidfVectorizer(max_features={max_features}, ngram_range=(1, 2))...")
+    vect = TfidfVectorizer(max_features=max_features, ngram_range=(1, 2))
     X = vect.fit_transform(df["clean"].values)
     y = df["emotion"].values
     print("Vectorized shape:", X.shape)
@@ -116,7 +126,7 @@ def main(csv_path: str, out_pkl: str, max_features: int):
 
     # Sanity test
     sample_text = "I feel great and happy today!"
-    sample_clean = clean_text(sample_text, ps, stop_words)
+    sample_clean = clean_text(sample_text, lemmatizer, stop_words)
     sample_vec = vect.transform([sample_clean])
     pred = clf.predict(sample_vec)[0]
     proba = clf.predict_proba(sample_vec).max()
@@ -126,6 +136,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--csv", default=CSV_PATH_DEFAULT, help="Path to combined_emotion.csv")
     p.add_argument("--out", default=OUTPUT_PKL, help="Output combined pickle filename")
-    p.add_argument("--features", type=int, default=MAX_FEATURES, help="CountVectorizer max_features")
+    p.add_argument("--features", type=int, default=MAX_FEATURES, help="TfidfVectorizer max_features")
     args = p.parse_args()
     main(args.csv, args.out, args.features)
