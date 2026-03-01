@@ -16,6 +16,32 @@ try:
 except LookupError:
     nltk.download('stopwords')
 
+SYNONYM_MAP = {
+        "ml": "machine learning",
+        "machine learning": "machine learning",
+
+        "nlp": "natural language processing",
+        "natural language processing": "natural language processing",
+
+        "ai": "artificial intelligence",
+        "artificial intelligence": "artificial intelligence",
+
+        "js": "javascript",
+        "javascript": "javascript",
+
+        "dl": "deep learning",
+        "deep learning": "deep learning"
+}
+
+def normalize_synonyms(text):
+    text = text.lower()
+
+    for key, value in SYNONYM_MAP.items():
+        text = text.replace(key, value)
+
+    return text
+
+
 def calculate_ats_score(resume_text, job_desc_text):
     """
     Simulates a realistic ATS scoring system.
@@ -25,6 +51,11 @@ def calculate_ats_score(resume_text, job_desc_text):
     if not resume_text or not job_desc_text:
         return 0
 
+    
+    resume_text = normalize_synonyms(resume_text)
+    job_desc_text = normalize_synonyms(job_desc_text)
+
+    #Create word sets  ← MISSING PART
     resume_words = set(resume_text.split())
     jd_words = set(job_desc_text.split())
 
@@ -63,6 +94,9 @@ def calculate_ats_score(resume_text, job_desc_text):
     ats_score = keyword_score + skill_score + exp_score + format_score
 
     return round(ats_score, 2)
+
+
+
 
 def extract_text_from_docx(uploaded_file):
     doc = Document(uploaded_file)
@@ -138,6 +172,9 @@ def calculate_similarity(resume_text, job_desc_text):
 
     if not resume_text or not job_desc_text:
         return 0.0
+    
+    resume_text = normalize_synonyms(resume_text)
+    job_desc_text = normalize_synonyms(job_desc_text)
     content = [resume_text, job_desc_text]
     
     tfidf = TfidfVectorizer()
@@ -158,6 +195,8 @@ def get_missing_keywords(resume_text, job_desc_text, top_n=10):
     # Strategy: Get top TF-IDF words from JD, check if they are in Resume
     if not resume_text or not job_desc_text:
         return []
+    resume_text = normalize_synonyms(resume_text)
+    job_desc_text = normalize_synonyms(job_desc_text)
     tfidf_jd = TfidfVectorizer(max_features=20) # Get top feature words
     tfidf_jd.fit([job_desc_text])
     
@@ -168,5 +207,5 @@ def get_missing_keywords(resume_text, job_desc_text, top_n=10):
     resume_words = set(resume_text.split())
     
     missing_keywords = [word for word in feature_names if word not in resume_words]
-            
+    
     return missing_keywords
