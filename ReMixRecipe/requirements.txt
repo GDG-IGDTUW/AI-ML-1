@@ -1,7 +1,7 @@
 streamlit
 pandas
-fuzzywuzzy
-python-Levenshtein 
 scikit-learn
-transformers
+fuzzywuzzy
+python-Levenshtein
 deep-translator
+transformers

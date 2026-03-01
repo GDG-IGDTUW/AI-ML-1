@@ -2,19 +2,68 @@ import PyPDF2
 import re
 import nltk
 import regex
+from collections import Counter
 from nltk.corpus import stopwords
-from langdetect import detect
+try:
+    from langdetect import detect
+except ModuleNotFoundError:
+    def detect(_text):
+        return "en"
 from docx import Document
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import pdfplumber
+try:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    SKLEARN_AVAILABLE = True
+except Exception:
+    TfidfVectorizer = None
+    cosine_similarity = None
+    SKLEARN_AVAILABLE = False
+try:
+    import pdfplumber
+    PDFPLUMBER_AVAILABLE = True
+except ModuleNotFoundError:
+    pdfplumber = None
+    PDFPLUMBER_AVAILABLE = False
 from io import BytesIO
+import os
+from mistralai import Mistral
+
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 # Download stopwords if not already present
 try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
     nltk.download('stopwords')
+
+SYNONYM_MAP = {
+        "ml": "machine learning",
+        "machine learning": "machine learning",
+
+        "nlp": "natural language processing",
+        "natural language processing": "natural language processing",
+
+        "ai": "artificial intelligence",
+        "artificial intelligence": "artificial intelligence",
+
+        "js": "javascript",
+        "javascript": "javascript",
+
+        "dl": "deep learning",
+        "deep learning": "deep learning"
+}
+
+def normalize_synonyms(text):
+    text = text.lower()
+
+    for key, value in SYNONYM_MAP.items():
+        text = text.replace(key, value)
+
+    return text
+
 
 def calculate_ats_score(resume_text, job_desc_text):
     """
@@ -25,6 +74,11 @@ def calculate_ats_score(resume_text, job_desc_text):
     if not resume_text or not job_desc_text:
         return 0
 
+    
+    resume_text = normalize_synonyms(resume_text)
+    job_desc_text = normalize_synonyms(job_desc_text)
+
+    #Create word sets  ← MISSING PART
     resume_words = set(resume_text.split())
     jd_words = set(job_desc_text.split())
 
@@ -64,6 +118,9 @@ def calculate_ats_score(resume_text, job_desc_text):
 
     return round(ats_score, 2)
 
+
+
+
 def extract_text_from_docx(uploaded_file):
     doc = Document(uploaded_file)
     text = [para.text for para in doc.paragraphs]
@@ -74,14 +131,21 @@ def extract_text_from_pdf(uploaded_file):
     Extracts text from an uploaded PDF file.
     """
     try:
-        with pdfplumber.open(uploaded_file) as pdf:
-            text = ""
-            for page in pdf.pages:
-                # layout=True helps maintain the word order in Indic scripts
-                extracted = page.extract_text(layout=True)
-                if extracted:
-                    text += extracted
-            return text
+        if PDFPLUMBER_AVAILABLE:
+            with pdfplumber.open(uploaded_file) as pdf:
+                text = ""
+                for page in pdf.pages:
+                    extracted = page.extract_text(layout=True)
+                    if extracted:
+                        text += extracted
+                return text
+
+        uploaded_file.seek(0)
+        reader = PyPDF2.PdfReader(uploaded_file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+        return text
     except Exception as e:
         return f"Error reading PDF: {e}"
 
@@ -138,14 +202,22 @@ def calculate_similarity(resume_text, job_desc_text):
 
     if not resume_text or not job_desc_text:
         return 0.0
-    content = [resume_text, job_desc_text]
     
-    tfidf = TfidfVectorizer()
-    tfidf_matrix = tfidf.fit_transform(content)
-    
-    # Cosine similarity between the first document (resume) and the second (job desc)
-    similarity_matrix = cosine_similarity(tfidf_matrix)
-    match_percentage = similarity_matrix[0][1] * 100
+    resume_text = normalize_synonyms(resume_text)
+    job_desc_text = normalize_synonyms(job_desc_text)
+    if SKLEARN_AVAILABLE:
+        content = [resume_text, job_desc_text]
+        tfidf = TfidfVectorizer()
+        tfidf_matrix = tfidf.fit_transform(content)
+        similarity_matrix = cosine_similarity(tfidf_matrix)
+        match_percentage = similarity_matrix[0][1] * 100
+    else:
+        resume_words = set(resume_text.split())
+        jd_words = set(job_desc_text.split())
+        union = resume_words.union(jd_words)
+        if not union:
+            return 0.0
+        match_percentage = (len(resume_words.intersection(jd_words)) / len(union)) * 100
     
     return round(match_percentage, 2)
 
@@ -158,15 +230,79 @@ def get_missing_keywords(resume_text, job_desc_text, top_n=10):
     # Strategy: Get top TF-IDF words from JD, check if they are in Resume
     if not resume_text or not job_desc_text:
         return []
-    tfidf_jd = TfidfVectorizer(max_features=20) # Get top feature words
-    tfidf_jd.fit([job_desc_text])
-    
-    feature_names = tfidf_jd.get_feature_names_out()
-    
-    # Check for simple presence (could be improved with fuzzy matching, but keeping it simple)
-    # cleaning resume text again just to be sure we are matching words
+    resume_text = normalize_synonyms(resume_text)
+    job_desc_text = normalize_synonyms(job_desc_text)
     resume_words = set(resume_text.split())
-    
-    missing_keywords = [word for word in feature_names if word not in resume_words]
-            
-    return missing_keywords
+
+    if SKLEARN_AVAILABLE:
+        tfidf_jd = TfidfVectorizer(max_features=max(20, top_n))
+        tfidf_jd.fit([job_desc_text])
+        feature_names = tfidf_jd.get_feature_names_out()
+        missing_keywords = [word for word in feature_names if word not in resume_words]
+        return missing_keywords[:top_n]
+
+    jd_tokens = [token for token in job_desc_text.split() if len(token) > 2]
+    token_counts = Counter(jd_tokens)
+    ranked_tokens = [token for token, _ in token_counts.most_common(top_n * 3)]
+    missing_keywords = [token for token in ranked_tokens if token not in resume_words]
+    return missing_keywords[:top_n]
+
+def generate_cover_letter_llm(resume_text, job_desc_text, tone):
+    """
+    Generates a personalized cover letter using Mistral LLM.
+    Uses original resume and job description text.
+    Tone is user-controlled .
+    Automatically adapts to detected language.
+    """
+
+    # Basic validation like other functions
+    if not resume_text or not job_desc_text:
+        return "Insufficient information to generate cover letter."
+
+    api_key = os.getenv("MISTRAL_API_KEY")
+
+    if not api_key:
+        return "Mistral API key not found. Please set MISTRAL_API_KEY environment variable."
+
+    try:
+        client = Mistral(api_key=api_key)
+
+        prompt = f"""
+You are a professional HR assistant.
+
+Detect the language of the resume and job description.
+Write the cover letter in the SAME language.
+Write a COMPLETE personalized cover letter.
+Use the resume content to infer skills and experience.
+Write full paragraphs, not a template.
+write the letter in tone provided by user.
+
+Guidelines:
+- Tone: {tone}
+- Length: 300-400 words
+- Avoid repetition
+- Highlight matching skills
+- Keep professional structure
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_desc_text}
+"""
+        response = client.chat.complete(
+            model="mistral-small-latest",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        return response.choices[0].message.content.strip()
+
+        
+
+    except Exception as e:
+        return f"Error generating cover letter: {str(e)}"
